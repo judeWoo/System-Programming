@@ -1,4 +1,4 @@
 # Jude Woo
 ## 111255764
-:STUCK_OUT_TONGUE:
+:stuck_out_tongue:
 Jennifer Wong - 01
