@@ -27,5 +27,6 @@
  * @return Refer to homework document for the return value of this function.
  */
 unsigned short validargs(int argc, char **argv) {
+    *argv
     return 0x8000;
 }
