@@ -36,12 +36,14 @@ int poly_table_decrypter(unsigned short col, char *alphabet);
 int encryptChecker(char *polybius_table_ptr, char c, unsigned short col, char *alphabet);
 int poly_cipher(unsigned short mode, char *alphabet);
 void poly_cipher_helper(int index);
-int fm_mtable_indexer(char c);
+int fm_mtable_indexer(char *morse_string, char *morse_string_buff, char *morse_string_buff_dup, char c);
 void fm_ktable_indexer(const char *alphabet);
-int fm_encrypter(char *morse_string, const char *alphabet);
+int fm_encrypter(const char *alphabet);
 int fm_decrypter(char *morse_string, const char *alphabet);
 int fm_cipher(unsigned short mode, const char *alphabet);
 void fm_cipher_helper(int index);
+int ft_traverser(char *morse_string, char *morse_string_buff, char **table);
+int string_compare(char *f_str, char *s_str);
 
 /**
  * @brief Validates command line arguments passed to the program.
@@ -58,7 +60,6 @@ void fm_cipher_helper(int index);
  * @return Refer to homework document for the return value of this function.
  */
 unsigned short validargs(int argc, char **argv) {
-
     unsigned short mode = 0x00AA; //mode is initailized to 0
     unsigned short rDigit = 10; //# of row
     unsigned short cDigit = 10; //# of column
@@ -234,8 +235,12 @@ unsigned short validargs(int argc, char **argv) {
   }
 
 /* For checking if the key is in alphabet or argument*/
-  int keyAlpChecker(char *givenKey, char *alphabet){
+int keyAlpChecker(char *givenKey, char *alphabet){
   char *initAlphabet = alphabet; //For go back to the starting point of alphabet
+  if ((*givenKey == '\0') && (*alphabet == '\0'))
+  {
+    return 1; // Both are Empty Strings
+  }
   while(*givenKey != '\0'){
     if (*givenKey == *alphabet)
     {
@@ -270,98 +275,98 @@ unsigned short validargs(int argc, char **argv) {
         }
         return 0;
       }
-      int const_keyAlpChecker(char *givenKey, const char *alphabet){
-  const char *initAlphabet = alphabet; //For go back to the starting point of alphabet
-  while(*givenKey != '\0'){
+int const_keyAlpChecker(char *givenKey, const char *alphabet){
+const char *initAlphabet = alphabet; //For go back to the starting point of alphabet
+while(*givenKey != '\0'){
+  if (*givenKey == *alphabet)
+  {
+    givenKey++;
+    if (*givenKey == '\0')
+    {
+      return 1;
+    }
+  }
+  while( *givenKey != *alphabet){
+    alphabet++;
     if (*givenKey == *alphabet)
     {
       givenKey++;
-      if (*givenKey == '\0')
-      {
-        return 1;
-      }
-    }
-    while( *givenKey != *alphabet){
-      alphabet++;
-      if (*givenKey == *alphabet)
-      {
-        givenKey++;
-              alphabet = initAlphabet; //init
-              if (*givenKey == '\0')
-              {
-                return 1;
-              }
-              break;
-            }
-            if (*alphabet == '\0')
+            alphabet = initAlphabet; //init
+            if (*givenKey == '\0')
             {
-              givenKey++;
-              alphabet = initAlphabet;
-              if (*givenKey == '\0')
-              {
-                return 0;
-              }
+              return 1;
+            }
+            break;
+          }
+          if (*alphabet == '\0')
+          {
+            givenKey++;
+            alphabet = initAlphabet;
+            if (*givenKey == '\0')
+            {
+              return 0;
             }
           }
         }
-        return 0;
       }
+      return 0;
+    }
 /* For checking if the key has duplicates*/
-      int keyDupChecker(char *givenKey){
-        char *first = givenKey;
-        char *second = givenKey+1;
-        if (*second == '\0')
-        {
-          return 1;
-        }
-        while(*(first) != *(second) ){
-          second++;
-          if (*(second) == '\0')
-          {
-            if (*(first+1) == '\0' )
-            {
-              return 1;
-            }
-            first++;
-            if (*(first+1) == '\0')
-            {
-              return 1;
-            }
-            second = first+1;
-          }
-        }
-        return 0;
+int keyDupChecker(char *givenKey){
+  char *first = givenKey;
+  char *second = givenKey+1;
+  if (*second == '\0')
+  {
+    return 1;
+  }
+  while(*(first) != *(second) ){
+    second++;
+    if (*(second) == '\0')
+    {
+      if (*(first+1) == '\0' )
+      {
+        return 1;
       }
+      first++;
+      if (*(first+1) == '\0')
+      {
+        return 1;
+      }
+      second = first+1;
+    }
+  }
+  return 0;
+}
 /*For counting size of string */
-      unsigned short string_length(char *givenString){
-        char *ptr = givenString;
-        int counter = 0;
-        while(*ptr != '\0'){
+unsigned short string_length(char *givenString){
+  char *ptr = givenString;
+  int counter = 0;
+  while(*ptr != '\0'){
 
-          counter++;
-          ptr++;
-          if (*ptr == '\0')
-          {
-            return counter;
-          }
-        }
-        return 0;
-      }
-      unsigned short const_string_length(const char *givenString){
-        const char *ptr = givenString;
-        int counter = 0;
-        while(*ptr != '\0'){
+    counter++;
+    ptr++;
+    if (*ptr == '\0')
+    {
+      return counter;
+    }
+  }
+  return 0;
+}
+unsigned short const_string_length(const char *givenString){
+  const char *ptr = givenString;
+  int counter = 0;
+  while(*ptr != '\0'){
 
-          counter++;
-          ptr++;
-          if (*ptr == '\0')
-          {
-            return counter;
-          }
-        }
-        return 0;
-      }
-      unsigned short c_changer(int argc, char **argv, unsigned short mode, unsigned short rDigit, unsigned short cDigit){
+    counter++;
+    ptr++;
+    if (*ptr == '\0')
+    {
+      return counter;
+    }
+  }
+  return 0;
+}
+unsigned short c_changer(int argc, char **argv, unsigned short mode, unsigned short rDigit, unsigned short cDigit){
   //printf("c_changer\n");
         cDigit = atoi(*(argv+argc+1));
   mode = mode & 0xFFF0; //set column as 0
@@ -653,41 +658,49 @@ void poly_cipher_helper(int index){
   }
 }
 //Indexing morse_table with ASCII code
-int fm_mtable_indexer(char c){
+int fm_mtable_indexer(char *morse_string, char *morse_string_buff, char *morse_string_buff_dup, char c){
   char *ascii_alphabet="!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
   for (int i = 0; i < string_length(ascii_alphabet); ++i)
   {
     if (c == *(ascii_alphabet+i))
     {
-      printf("The equivalent index for input %c is %d\n", c, i);
+      morse_string_buff_dup = "";
       return i;
     }
   }
   if (c == '\n')
   {
     fprintf(stdout, "%c", c);
+    morse_string = "";
+    morse_string_buff_dup = "";
     return -2;
   }
   if (c == ' ') //treat multiple white space as one
   {
+    if (keyAlpChecker(morse_string_buff, morse_string_buff_dup) == 1)
+    {
+      morse_string = "";
+      return -3;
+    }
+    morse_string = "xx";
+    morse_string_buff_dup = "xx";
     return -3;
   }
-  printf("Not a valid character\n");
+  morse_string = "";
   return -1;
 }
 void fm_ktable_indexer(const char *alphabet){
   const char *fm_alphabet_ptr = alphabet;
   char *fm_key_ptr = fm_key;
-  const char *fm_table_ptr = *(fractionated_table);
   for (int i = 0; i < const_string_length(fm_alphabet_ptr); ++i)
   {
     *(fm_key_ptr+i) = *(fm_alphabet_ptr+i); //Assign fm_key with fm_alphabet
   }
   if(*(key) != '\0'){
-      for (int i = 0; i < const_string_length(key); ++i)
+    for (int i = 0; i < const_string_length(key); ++i)
+    {
+      for (int j = 0; j < const_string_length(alphabet); ++j)
       {
-        for (int j = 0; j < const_string_length(alphabet); ++j)
-        {
       if(*(fm_key_ptr+j) == *(key+const_string_length(key)-1-i)){ //starting from the very last of key
         fm_cipher_helper(j);
       }
@@ -695,17 +708,49 @@ void fm_ktable_indexer(const char *alphabet){
   }
 }
 }
-int fm_encrypter(char *morse_string, const char *alphabet){
-  char *morse_string_buff = "";
+int fm_encrypter(const char *alphabet){
+  char *morse_string_buff = ""; //for containing the last char
   char *morse_string_buff_dup = ""; //for multiple whitespace check
+  char **fm_table_ptr = fractionated_table;
+  char **morse_table_ptr = morse_table;
+  char *fm_key_ptr_enc = fm_key; //use when fm_key is set
+  int endFlag = 0; //for checking if a character is read
   int c = 1;
   FILE *file;
   file = fopen("test.txt", "r");
   if (file) {
-    while ((c = getc(file)) != EOF){
-      int index_mt = fm_mtable_indexer(c);
-
+    while (c != EOF){
+      c = getc(file);
+      if (c == EOF)
+      {
+        break;
       }
+      char *morse_string = "";
+      int index_mt = fm_mtable_indexer(morse_string, morse_string_buff, morse_string_buff_dup, c);
+      switch(index_mt){
+        case -1:
+        return 0;
+        case -2:
+        continue;
+        case -3:
+        continue;
+        default:
+          morse_string = *(morse_table_ptr+index_mt); //Get morse code
+        }
+        if (keyAlpChecker(morse_string, "") == 1)
+        {
+          continue; //Morse is Empty. Gen another
+        }
+      fm_ktable_indexer(fm_alphabet); //assign value in fm_key with key
+      if (string_length(morse_string) + string_length(morse_string_buff) < 2)
+      {
+        morse_string_buff = morse_string;
+        continue;
+      }
+      else{
+      //call traverser
+      }
+    }
     fclose(file);
   }
   return 1;
@@ -736,13 +781,32 @@ void fm_cipher_helper(int index){
     }
   }
 }
-// {
-//   fm_ktable_indexer(fm_alphabet);
-//         for (int i = 0; i < const_string_length(fm_table_ptr); ++i)
-//         {
-//           if (keyAlpChecker(morse_string, *(fm_table_ptr+i)) == 1)
-//           {
-//             fprintf(stdout, "%c\n", *(fm_key_ptr+i));
-//           }
-//         }
-// }
+//works only when morse_string has equal to or more than 3
+int ft_traverser(char *morse_string, char *morse_string_buff, char **table){
+  int i = 0;
+  int j = 0;
+  //when buff is not empty, buff can only be up to 2 char
+  while (*(morse_string_buff)!='\0')
+  {
+    while (*(morse_string_buff+i) == **(table+i)+j){
+
+    }
+    i++;
+  }
+//big_nb calls
+  return 0;
+}
+int string_compare(char *first, char *second)
+{
+   while(*first==*second)
+   {
+      if ( *first == '\0' || *second == '\0' )
+         break;
+      first++;
+      second++;
+   }
+   if( *first == '\0' && *second == '\0' )
+      return 0;
+   else
+      return -1;
+}
