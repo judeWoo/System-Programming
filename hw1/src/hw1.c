@@ -712,7 +712,7 @@ int fm_encrypter(const char *alphabet){
   *(my_buff+3) = '\0';
   while (c != EOF){
     c = getchar();
-    printf("THe very Input: %c\n", c);
+    //printf("\nTHe very Input: %c\n", c);
     const char *morse_string = "";
     int index_mt = fm_mtable_indexer(morse_string, c);
     switch(index_mt){
@@ -735,7 +735,7 @@ int fm_encrypter(const char *alphabet){
       }
       if (*my_buff == '\0')
       {
-        indicator = "x";
+        indicator = "x"; //how to??
       }
           int index_WS = morse_buff_allocator(indicator, my_buff, 3, 0);
           if (string_length(my_buff) == 3)
@@ -745,7 +745,7 @@ int fm_encrypter(const char *alphabet){
               if (compare_string(my_buff, *(fm_table_ptr+i)) == 0)
               {
                 char *fm_key_ptr_a = fm_key;
-                fprintf(stdout, "%c\n", *(fm_key_ptr_a+i));
+                fprintf(stdout, "%c", *(fm_key_ptr_a+i));
                 //clear buffer
               *(my_buff) = '\0';
               *(my_buff+1) = '\0';
@@ -759,12 +759,12 @@ int fm_encrypter(const char *alphabet){
           {
             continue;
           }
-          printf("SOMETHING GOOOO WRONGGG");
+          //printf("SOMETHING GOOOO WRONGGG");
           continue;
           default:
           white_space = 0;
           morse_string = *(morse_table_ptr+index_mt); //Get morse code
-          printf("For Beginning: MS: %s, MB: %s\n", morse_string, my_buff);
+          //printf("\nFor Beginning: MS: %s, MB: %s\n", morse_string, my_buff);
         }
         if (*morse_string ==  '\0')
         {
@@ -780,16 +780,16 @@ int fm_encrypter(const char *alphabet){
         if (const_string_length(morse_string) == 2)
         {
           *(my_buff) = *(morse_string);
-          *(my_buff+1) = *(morse_string);
+          *(my_buff+1) = *(morse_string+1);
           *(my_buff+2) = 'x';
             //Buff is now 3 => print and clear buff
-          printf("Buff is %s and MS: %s\n", my_buff, morse_string);
+          //printf("Buff is %s and MS: %s\n", my_buff, morse_string);
           for (int i = 0; i < 26; ++i)
           {
             if (compare_string(my_buff, *(fm_table_ptr+i)) == 0)
             {
               char *fm_key_ptr_a = fm_key;
-              fprintf(stdout, "%c\n", *(fm_key_ptr_a+i));
+              fprintf(stdout, "%c", *(fm_key_ptr_a+i));
                 //clear buffer
               *(my_buff) = '\0';
               *(my_buff+1) = '\0';
@@ -806,13 +806,13 @@ int fm_encrypter(const char *alphabet){
         while(const_string_length(morse_string) - index > 2){
             //=>Assign 3 letter to my_buff and record the index at that point (or take out those three from first and pull the rest to front)
           index = morse_buff_allocator(morse_string, my_buff, 3, index);
-          printf("First Rounder: MB: %s, INDEX=%d\n", my_buff, index);
+          //printf("\nFirst Rounder: MB: %s, INDEX=%d\n", my_buff, index);
           for (int i = 0; i < 26; ++i)
           {
             if (compare_string(my_buff, *(fm_table_ptr+i)) == 0)
             {
               char *fm_key_ptr_a = fm_key;
-              fprintf(stdout, "%c\n", *(fm_key_ptr_a+i));
+              fprintf(stdout, "%c", *(fm_key_ptr_a+i));
                 //clear buffer
               *(my_buff) = '\0';
               *(my_buff+1) = '\0';
@@ -835,7 +835,7 @@ int fm_encrypter(const char *alphabet){
               if (compare_string(my_buff, *(fm_table_ptr+i)) == 0)
               {
                 char *fm_key_ptr_a = fm_key;
-                fprintf(stdout, "%c\n", *(fm_key_ptr_a+i));
+                fprintf(stdout, "%c", *(fm_key_ptr_a+i));
                 //clear buffer
                 *(my_buff) = '\0';
                 *(my_buff+1) = '\0';
@@ -850,7 +850,7 @@ int fm_encrypter(const char *alphabet){
           {
             continue;
           }
-        printf("Check out INDEX!: MB: %s, INDEX=%d\n", my_buff, index);
+        //printf("Check out INDEX!: MB: %s, INDEX=%d\n", my_buff, index);
         continue;
         }
       }
@@ -859,7 +859,7 @@ int fm_encrypter(const char *alphabet){
         {
           int index = 0;
           index = morse_buff_allocator(morse_string, my_buff, 3, index);
-          printf("Second Rounder: MB: %s, INDEX=%d\n", my_buff, index);
+          //printf("\nSecond Rounder: MB: %s, INDEX=%d\n", my_buff, index);
           if (index == 0)
           {
             //Buffer 2 => +X and Print and clear Buffer and Read Next
@@ -872,7 +872,7 @@ int fm_encrypter(const char *alphabet){
                 if (compare_string(my_buff, *(fm_table_ptr+i)) == 0)
                 {
                   char *fm_key_ptr_a = fm_key;
-                  fprintf(stdout, "%c\n", *(fm_key_ptr_a+i));
+                  fprintf(stdout, "%c", *(fm_key_ptr_a+i));
                 //clear buffer
                   *(my_buff) = '\0';
                   *(my_buff+1) = '\0';
@@ -883,13 +883,13 @@ int fm_encrypter(const char *alphabet){
               continue;
             }
             else {
-              printf("12 Rounder: MB: %s, INDEX=%d\n", my_buff, index);
+              //printf("\n12 Rounder: MB: %s, INDEX=%d\n", my_buff, index);
               for (int i = 0; i < 26; ++i)
               {
                 if (compare_string(my_buff, *(fm_table_ptr+i)) == 0)
                 {
                   char *fm_key_ptr_a = fm_key;
-                  fprintf(stdout, "%c\n", *(fm_key_ptr_a+i));
+                  fprintf(stdout, "%c", *(fm_key_ptr_a+i));
                 //clear buffer
                   *(my_buff) = '\0';
                   *(my_buff+1) = '\0';
@@ -902,13 +902,13 @@ int fm_encrypter(const char *alphabet){
             }
           }
           //This means Morse_string is > 2 that Print => flush B =>Read until morse_String is gone => Read Next
-          printf("Fourth Rounder: MB: %s, INDEX=%d\n", my_buff, index);
+          //printf("\nFourth Rounder: MB: %s, INDEX=%d\n", my_buff, index);
           for (int i = 0; i < 26; ++i)
           {
             if (compare_string(my_buff, *(fm_table_ptr+i)) == 0)
             {
               char *fm_key_ptr_a = fm_key;
-              fprintf(stdout, "%c\n", *(fm_key_ptr_a+i));
+              fprintf(stdout, "%c", *(fm_key_ptr_a+i));
                 //clear buffer
               *(my_buff) = '\0';
               *(my_buff+1) = '\0';
@@ -919,13 +919,13 @@ int fm_encrypter(const char *alphabet){
           while (const_string_length(morse_string) - index > 2){
             //=>Assign 3 letter to my_buff and record the index at that point (or take out those three from first and pull the rest to front)
             index = morse_buff_allocator(morse_string, my_buff, 3, index);
-            printf("Third Rounder: MB: %s, INDEX=%d\n", my_buff, index);
+            //printf("\nThird Rounder: MB: %s, INDEX=%d\n", my_buff, index);
             for (int i = 0; i < 26; ++i)
             {
               if (compare_string(my_buff, *(fm_table_ptr+i)) == 0)
               {
                 char *fm_key_ptr_a = fm_key;
-                fprintf(stdout, "%c\n", *(fm_key_ptr_a+i));
+                fprintf(stdout, "%c", *(fm_key_ptr_a+i));
                 //clear buffer
                 *(my_buff) = '\0';
                 *(my_buff+1) = '\0';
@@ -944,13 +944,13 @@ int fm_encrypter(const char *alphabet){
           if (string_length(my_buff) == 2)
           {
             *(my_buff+2) = 'x';
-            printf("Fifth Rounder: MB: %s, INDEX=%d\n", my_buff, index);
+            //printf("\nFifth Rounder: MB: %s, INDEX=%d\n", my_buff, index);
             for (int i = 0; i < 26; ++i)
             {
               if (compare_string(my_buff, *(fm_table_ptr+i)) == 0)
               {
                 char *fm_key_ptr_a = fm_key;
-                fprintf(stdout, "%c\n", *(fm_key_ptr_a+i));
+                fprintf(stdout, "%c", *(fm_key_ptr_a+i));
                 //clear buffer
                 *(my_buff) = '\0';
                 *(my_buff+1) = '\0';
@@ -961,13 +961,13 @@ int fm_encrypter(const char *alphabet){
             continue;
           }
           else {
-            printf("Sixth Rounder: MB: %s, INDEX=%d\n", my_buff, index);
+            //printf("\nSixth Rounder: MB: %s, INDEX=%d\n", my_buff, index);
             for (int i = 0; i < 26; ++i)
             {
               if (compare_string(my_buff, *(fm_table_ptr+i)) == 0)
               {
                 char *fm_key_ptr_a = fm_key;
-                fprintf(stdout, "%c\n", *(fm_key_ptr_a+i));
+                fprintf(stdout, "%c", *(fm_key_ptr_a+i));
                 //clear buffer
                 *(my_buff) = '\0';
                 *(my_buff+1) = '\0';
@@ -988,17 +988,17 @@ int fm_encrypter(const char *alphabet){
       else if (string_length(my_buff) == 2){
         int index = 0;
         index = morse_buff_allocator(morse_string, my_buff, 3, index);
-        printf("Seventh Rounder: MB: %s, INDEX=%d\n", my_buff, index);
+        //printf("\nSeventh Rounder: MB: %s, INDEX=%d\n", my_buff, index);
         if (index == 0)
         {
             //Buffer 3 => Print and clear Buffer and +X and Read Next
-          printf("11 Rounder: MB: %s, INDEX=%d\n", my_buff, index);
+          //printf("\n11 Rounder: MB: %s, INDEX=%d\n", my_buff, index);
           for (int i = 0; i < 26; ++i)
           {
             if (compare_string(my_buff, *(fm_table_ptr+i)) == 0)
             {
               char *fm_key_ptr_a = fm_key;
-              fprintf(stdout, "%c\n", *(fm_key_ptr_a+i));
+              fprintf(stdout, "%c", *(fm_key_ptr_a+i));
                 //clear buffer
               *(my_buff) = '\0';
               *(my_buff+1) = '\0';
@@ -1010,13 +1010,13 @@ int fm_encrypter(const char *alphabet){
           continue;
         }
           //This means Morse_string is > 1 that Print => flush B =>Take Morse_String
-        printf("8 Rounder: MB: %s, INDEX=%d\n", my_buff, index);
+        //printf("\n8 Rounder: MB: %s, INDEX=%d\n", my_buff, index);
         for (int i = 0; i < 26; ++i)
         {
           if (compare_string(my_buff, *(fm_table_ptr+i)) == 0)
           {
             char *fm_key_ptr_a = fm_key;
-            fprintf(stdout, "%c\n", *(fm_key_ptr_a+i));
+            fprintf(stdout, "%c", *(fm_key_ptr_a+i));
                 //clear buffer
             *(my_buff) = '\0';
             *(my_buff+1) = '\0';
@@ -1027,13 +1027,13 @@ int fm_encrypter(const char *alphabet){
         while (const_string_length(morse_string) - index > 2){
             //=>Assign 3 letter to my_buff and record the index at that point (or take out those three from first and pull the rest to front)
           index = morse_buff_allocator(morse_string, my_buff, 3, index);
-          printf("9 Rounder: MB: %s, INDEX=%d\n", my_buff, index);
+          //printf("\n9 Rounder: MB: %s, INDEX=%d\n", my_buff, index);
           for (int i = 0; i < 26; ++i)
           {
             if (compare_string(my_buff, *(fm_table_ptr+i)) == 0)
             {
               char *fm_key_ptr_a = fm_key;
-              fprintf(stdout, "%c\n", *(fm_key_ptr_a+i));
+              fprintf(stdout, "%c", *(fm_key_ptr_a+i));
                 //clear buffer
               *(my_buff) = '\0';
               *(my_buff+1) = '\0';
@@ -1049,13 +1049,13 @@ int fm_encrypter(const char *alphabet){
         if (index == 0)
         {
             //Buffer 3 => Print and clear Buffer and +X and Read Next
-          printf("10 Rounder: MB: %s, INDEX=%d\n", my_buff, index);
+          //printf("\n10 Rounder: MB: %s, INDEX=%d\n", my_buff, index);
           for (int i = 0; i < 26; ++i)
           {
             if (compare_string(my_buff, *(fm_table_ptr+i)) == 0)
             {
               char *fm_key_ptr_a = fm_key;
-              fprintf(stdout, "%c\n", *(fm_key_ptr_a+i));
+              fprintf(stdout, "%c", *(fm_key_ptr_a+i));
                 //clear buffer
               *(my_buff) = '\0';
               *(my_buff+1) = '\0';
@@ -1072,8 +1072,8 @@ int fm_encrypter(const char *alphabet){
           }
       }
       else{
-        printf("Can't Be Here\n");
-        printf("The Buff is: %s, The length is %d\n" ,my_buff, string_length(my_buff));
+        //printf("Can't Be Here\n");
+        //printf("The Buff is: %s, The length is %d\n" ,my_buff, string_length(my_buff));
       }
     }
   }
@@ -1149,7 +1149,7 @@ int cleaner(const char *morse_string, char *my_buff, int index){
   int second_F = morse_buff_allocator(morse_string, my_buff, 3, index);
   if (second_F != 0)
   {
-    printf("SOMETHING GOT WAY WRONGGGGG\n");
+    //printf("SOMETHING GOT WAY WRONGGGGG\n");
     return 0;
   }
   if (compare_string("xx", morse_string) != 0)
@@ -1157,7 +1157,7 @@ int cleaner(const char *morse_string, char *my_buff, int index){
     int forX = morse_buff_allocator("x", my_buff, 3, 0);
     if (forX != 0)
     {
-      printf("HOLY, SOMETHING GOT WAY WRONGGGGG\n");
+      //printf("HOLY, SOMETHING GOT WAY WRONGGGGG\n");
       return 0;
     }
   }
@@ -1168,7 +1168,7 @@ int cleaner(const char *morse_string, char *my_buff, int index){
       if (compare_string(my_buff, *(fm_table_ptr+i)) == 0)
       {
         char *fm_key_ptr_a = fm_key;
-        fprintf(stdout, "%c\n", *(fm_key_ptr_a+i));
+        fprintf(stdout, "%c", *(fm_key_ptr_a+i));
                 //clear buffer
         *(my_buff) = '\0';
         *(my_buff+1) = '\0';
