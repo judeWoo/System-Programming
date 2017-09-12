@@ -36,14 +36,16 @@ int poly_table_decrypter(unsigned short col, char *alphabet);
 int encryptChecker(char *polybius_table_ptr, char c, unsigned short col, char *alphabet);
 int poly_cipher(unsigned short mode, char *alphabet);
 void poly_cipher_helper(int index);
-int fm_mtable_indexer(char *morse_string, char *morse_string_buff, char *morse_string_buff_dup, char c);
+int fm_mtable_indexer(const char *morse_string, char c);
 void fm_ktable_indexer(const char *alphabet);
 int fm_encrypter(const char *alphabet);
-int fm_decrypter(char *morse_string, const char *alphabet);
+int fm_decrypter(const char *morse_string, const char *alphabet);
 int fm_cipher(unsigned short mode, const char *alphabet);
 void fm_cipher_helper(int index);
-int ft_traverser(char *morse_string, char *morse_string_buff, char **table);
-int string_compare(char *f_str, char *s_str);
+int ft_traverser(char *morse_string, const char *morse_string_buff, char **table);
+int morse_buff_allocator(const char *morse_string, char *my_buff, int size, int index);
+int cleaner(const char *morse_string, char *my_buff, int index);
+int compare_string(char *first, const char *second);
 
 /**
  * @brief Validates command line arguments passed to the program.
@@ -235,12 +237,8 @@ unsigned short validargs(int argc, char **argv) {
   }
 
 /* For checking if the key is in alphabet or argument*/
-int keyAlpChecker(char *givenKey, char *alphabet){
+  int keyAlpChecker(char *givenKey, char *alphabet){
   char *initAlphabet = alphabet; //For go back to the starting point of alphabet
-  if ((*givenKey == '\0') && (*alphabet == '\0'))
-  {
-    return 1; // Both are Empty Strings
-  }
   while(*givenKey != '\0'){
     if (*givenKey == *alphabet)
     {
@@ -275,7 +273,7 @@ int keyAlpChecker(char *givenKey, char *alphabet){
         }
         return 0;
       }
-int const_keyAlpChecker(char *givenKey, const char *alphabet){
+      int const_keyAlpChecker(char *givenKey, const char *alphabet){
 const char *initAlphabet = alphabet; //For go back to the starting point of alphabet
 while(*givenKey != '\0'){
   if (*givenKey == *alphabet)
@@ -312,63 +310,63 @@ while(*givenKey != '\0'){
       return 0;
     }
 /* For checking if the key has duplicates*/
-int keyDupChecker(char *givenKey){
-  char *first = givenKey;
-  char *second = givenKey+1;
-  if (*second == '\0')
-  {
-    return 1;
-  }
-  while(*(first) != *(second) ){
-    second++;
-    if (*(second) == '\0')
-    {
-      if (*(first+1) == '\0' )
+    int keyDupChecker(char *givenKey){
+      char *first = givenKey;
+      char *second = givenKey+1;
+      if (*second == '\0')
       {
         return 1;
       }
-      first++;
-      if (*(first+1) == '\0')
-      {
-        return 1;
+      while(*(first) != *(second) ){
+        second++;
+        if (*(second) == '\0')
+        {
+          if (*(first+1) == '\0' )
+          {
+            return 1;
+          }
+          first++;
+          if (*(first+1) == '\0')
+          {
+            return 1;
+          }
+          second = first+1;
+        }
       }
-      second = first+1;
+      return 0;
     }
-  }
-  return 0;
-}
 /*For counting size of string */
-unsigned short string_length(char *givenString){
-  char *ptr = givenString;
-  int counter = 0;
-  while(*ptr != '\0'){
+    unsigned short string_length(char *givenString){
+      char *ptr = givenString;
+      int counter = 0;
+      while(*ptr != '\0'){
 
-    counter++;
-    ptr++;
-    if (*ptr == '\0')
-    {
-      return counter;
+        counter++;
+        ptr++;
+        if (*ptr == '\0')
+        {
+          return counter;
+        }
+      }
+      return 0;
     }
-  }
-  return 0;
-}
-unsigned short const_string_length(const char *givenString){
-  const char *ptr = givenString;
-  int counter = 0;
-  while(*ptr != '\0'){
+    unsigned short const_string_length(const char *givenString){
+      const char *ptr = givenString;
+      int counter = 0;
+      while(*ptr != '\0'){
 
-    counter++;
-    ptr++;
-    if (*ptr == '\0')
-    {
-      return counter;
+        counter++;
+        ptr++;
+        if (*ptr == '\0')
+        {
+          return counter;
+        }
+      }
+      return 0;
     }
-  }
-  return 0;
-}
-unsigned short c_changer(int argc, char **argv, unsigned short mode, unsigned short rDigit, unsigned short cDigit){
+    unsigned short c_changer(int argc, char **argv, unsigned short mode, unsigned short rDigit, unsigned short cDigit){
   //printf("c_changer\n");
-        cDigit = atoi(*(argv+argc+1));
+      cDigit = atoi(*(argv+argc+1));
   mode = mode & 0xFFF0; //set column as 0
   mode = mode | cDigit;
   //printf("Row of Mode is %d\n", mode & 0x00F0);
@@ -658,32 +656,23 @@ void poly_cipher_helper(int index){
   }
 }
 //Indexing morse_table with ASCII code
-int fm_mtable_indexer(char *morse_string, char *morse_string_buff, char *morse_string_buff_dup, char c){
+int fm_mtable_indexer(const char *morse_string, char c){
   char *ascii_alphabet="!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
   for (int i = 0; i < string_length(ascii_alphabet); ++i)
   {
     if (c == *(ascii_alphabet+i))
     {
-      morse_string_buff_dup = "";
       return i;
     }
   }
   if (c == '\n')
   {
     fprintf(stdout, "%c", c);
-    morse_string = "";
-    morse_string_buff_dup = "";
     return -2;
   }
   if (c == ' ') //treat multiple white space as one
   {
-    if (keyAlpChecker(morse_string_buff, morse_string_buff_dup) == 1)
-    {
-      morse_string = "";
-      return -3;
-    }
     morse_string = "xx";
-    morse_string_buff_dup = "xx";
     return -3;
   }
   morse_string = "";
@@ -709,58 +698,393 @@ void fm_ktable_indexer(const char *alphabet){
 }
 }
 int fm_encrypter(const char *alphabet){
-  char *morse_string_buff = ""; //for containing the last char
-  char *morse_string_buff_dup = ""; //for multiple whitespace check
-  char **fm_table_ptr = fractionated_table;
-  char **morse_table_ptr = morse_table;
-  char *fm_key_ptr_enc = fm_key; //use when fm_key is set
-  int endFlag = 0; //for checking if a character is read
+  int white_space = 0; //for counting continuous ws
+  long space1;
+  char *my_buff = (char *) &space1; //for containing the last char
+  const char *indicator =""; //indicate whether word has finished or the letter has finished
+  const char **fm_table_ptr = fractionated_table;
+  const char **morse_table_ptr = morse_table;
   int c = 1;
-  FILE *file;
-  file = fopen("test.txt", "r");
-  if (file) {
-    while (c != EOF){
-      c = getc(file);
-      if (c == EOF)
+  //Initializing Buffer with empty char
+  *(my_buff) = '\0';
+  *(my_buff+1) = '\0';
+  *(my_buff+2) = '\0';
+  *(my_buff+3) = '\0';
+  while (c != EOF){
+    c = getchar();
+    printf("THe very Input: %c\n", c);
+    const char *morse_string = "";
+    int index_mt = fm_mtable_indexer(morse_string, c);
+    switch(index_mt){
+      case -1:
+      white_space = 0;
+      return 0;
+      case -2:
+      white_space = 0;
+      continue;
+      case -3:
+      white_space ++;
+      if (white_space > 1)
       {
-        break;
+        continue;
       }
-      char *morse_string = "";
-      int index_mt = fm_mtable_indexer(morse_string, morse_string_buff, morse_string_buff_dup, c);
-      switch(index_mt){
-        case -1:
-        return 0;
-        case -2:
-        continue;
-        case -3:
-        continue;
-        default:
-          morse_string = *(morse_table_ptr+index_mt); //Get morse code
-        }
-        if (keyAlpChecker(morse_string, "") == 1)
-        {
-          continue; //Morse is Empty. Gen another
-        }
-      fm_ktable_indexer(fm_alphabet); //assign value in fm_key with key
-      if (string_length(morse_string) + string_length(morse_string_buff) < 2)
+      if (*(my_buff+string_length(my_buff)-1) == 'x')
       {
-        morse_string_buff = morse_string;
+        *(my_buff+string_length(my_buff)-1) = '\0';
+        indicator = "xx";
+      }
+      if (*my_buff == '\0')
+      {
+        indicator = "x";
+      }
+          int index_WS = morse_buff_allocator(indicator, my_buff, 3, 0);
+          if (string_length(my_buff) == 3)
+          {
+            for (int i = 0; i < 26; ++i)
+            {
+              if (compare_string(my_buff, *(fm_table_ptr+i)) == 0)
+              {
+                char *fm_key_ptr_a = fm_key;
+                fprintf(stdout, "%c\n", *(fm_key_ptr_a+i));
+                //clear buffer
+              *(my_buff) = '\0';
+              *(my_buff+1) = '\0';
+              *(my_buff+2) = '\0';
+                break;
+              }
+            }
+          }
+            continue; //That there is nothing to print, read another char
+          if (cleaner(indicator, my_buff, index_WS)==1)
+          {
+            continue;
+          }
+          printf("SOMETHING GOOOO WRONGGG");
+          continue;
+          default:
+          white_space = 0;
+          morse_string = *(morse_table_ptr+index_mt); //Get morse code
+          printf("For Beginning: MS: %s, MB: %s\n", morse_string, my_buff);
+        }
+        if (*morse_string ==  '\0')
+        {
+          return 0; //Morse is Empty. Failed
+        }
+      fm_ktable_indexer(alphabet); //assign value in fm_key with key
+      if (*my_buff == '\0')
+      {
+       if (const_string_length(morse_string) < 3)
+       {
+        *my_buff = *(morse_string);
+        *(my_buff+1) = 'x';
+        if (const_string_length(morse_string) == 2)
+        {
+          *(my_buff) = *(morse_string);
+          *(my_buff+1) = *(morse_string);
+          *(my_buff+2) = 'x';
+            //Buff is now 3 => print and clear buff
+          printf("Buff is %s and MS: %s\n", my_buff, morse_string);
+          for (int i = 0; i < 26; ++i)
+          {
+            if (compare_string(my_buff, *(fm_table_ptr+i)) == 0)
+            {
+              char *fm_key_ptr_a = fm_key;
+              fprintf(stdout, "%c\n", *(fm_key_ptr_a+i));
+                //clear buffer
+              *(my_buff) = '\0';
+              *(my_buff+1) = '\0';
+              *(my_buff+2) = '\0';
+              break;
+            }
+          }
+          continue;
+        }
         continue;
       }
       else{
-      //call traverser
+        int index = 0;
+        while(const_string_length(morse_string) - index > 2){
+            //=>Assign 3 letter to my_buff and record the index at that point (or take out those three from first and pull the rest to front)
+          index = morse_buff_allocator(morse_string, my_buff, 3, index);
+          printf("First Rounder: MB: %s, INDEX=%d\n", my_buff, index);
+          for (int i = 0; i < 26; ++i)
+          {
+            if (compare_string(my_buff, *(fm_table_ptr+i)) == 0)
+            {
+              char *fm_key_ptr_a = fm_key;
+              fprintf(stdout, "%c\n", *(fm_key_ptr_a+i));
+                //clear buffer
+              *(my_buff) = '\0';
+              *(my_buff+1) = '\0';
+              *(my_buff+2) = '\0';
+              break;
+            }
+          }
+          if (index == 0)
+          {
+            break; //That there is nothing to print, read another char
+          }
+        }
+        if (index == 0)
+        {
+          *(my_buff) = 'x';
+          if (string_length(my_buff) == 3)
+          {
+            for (int i = 0; i < 26; ++i)
+            {
+              if (compare_string(my_buff, *(fm_table_ptr+i)) == 0)
+              {
+                char *fm_key_ptr_a = fm_key;
+                fprintf(stdout, "%c\n", *(fm_key_ptr_a+i));
+                //clear buffer
+                *(my_buff) = '\0';
+                *(my_buff+1) = '\0';
+                *(my_buff+2) = '\0';
+                break;
+              }
+            }
+          }
+            continue; //That there is nothing to print, read another char
+          }
+          if (cleaner(morse_string, my_buff, index)==1)
+          {
+            continue;
+          }
+        printf("Check out INDEX!: MB: %s, INDEX=%d\n", my_buff, index);
+        continue;
+        }
+      }
+      else{ //when buffer is in place
+        if (string_length(my_buff)==1)
+        {
+          int index = 0;
+          index = morse_buff_allocator(morse_string, my_buff, 3, index);
+          printf("Second Rounder: MB: %s, INDEX=%d\n", my_buff, index);
+          if (index == 0)
+          {
+            //Buffer 2 => +X and Print and clear Buffer and Read Next
+            //Buffer 3 => Print and clear Buffer and +X and Read Next
+            if (string_length(my_buff) == 2)
+            {
+              *(my_buff+2) = 'x';
+              for (int i = 0; i < 26; ++i)
+              {
+                if (compare_string(my_buff, *(fm_table_ptr+i)) == 0)
+                {
+                  char *fm_key_ptr_a = fm_key;
+                  fprintf(stdout, "%c\n", *(fm_key_ptr_a+i));
+                //clear buffer
+                  *(my_buff) = '\0';
+                  *(my_buff+1) = '\0';
+                  *(my_buff+2) = '\0';
+                  break;
+                }
+              }
+              continue;
+            }
+            else {
+              printf("12 Rounder: MB: %s, INDEX=%d\n", my_buff, index);
+              for (int i = 0; i < 26; ++i)
+              {
+                if (compare_string(my_buff, *(fm_table_ptr+i)) == 0)
+                {
+                  char *fm_key_ptr_a = fm_key;
+                  fprintf(stdout, "%c\n", *(fm_key_ptr_a+i));
+                //clear buffer
+                  *(my_buff) = '\0';
+                  *(my_buff+1) = '\0';
+                  *(my_buff+2) = '\0';
+                  break;
+                }
+              }
+              *(my_buff) = 'x';
+              continue;
+            }
+          }
+          //This means Morse_string is > 2 that Print => flush B =>Read until morse_String is gone => Read Next
+          printf("Fourth Rounder: MB: %s, INDEX=%d\n", my_buff, index);
+          for (int i = 0; i < 26; ++i)
+          {
+            if (compare_string(my_buff, *(fm_table_ptr+i)) == 0)
+            {
+              char *fm_key_ptr_a = fm_key;
+              fprintf(stdout, "%c\n", *(fm_key_ptr_a+i));
+                //clear buffer
+              *(my_buff) = '\0';
+              *(my_buff+1) = '\0';
+              *(my_buff+2) = '\0';
+              break;
+            }
+          }
+          while (const_string_length(morse_string) - index > 2){
+            //=>Assign 3 letter to my_buff and record the index at that point (or take out those three from first and pull the rest to front)
+            index = morse_buff_allocator(morse_string, my_buff, 3, index);
+            printf("Third Rounder: MB: %s, INDEX=%d\n", my_buff, index);
+            for (int i = 0; i < 26; ++i)
+            {
+              if (compare_string(my_buff, *(fm_table_ptr+i)) == 0)
+              {
+                char *fm_key_ptr_a = fm_key;
+                fprintf(stdout, "%c\n", *(fm_key_ptr_a+i));
+                //clear buffer
+                *(my_buff) = '\0';
+                *(my_buff+1) = '\0';
+                *(my_buff+2) = '\0';
+                break;
+              }
+            }
+            if (index == 0)
+            {
+            break; //That there is nothing to print, read another char
+          }
+        }
+        if (index == 0){
+            //Buffer 2 => +X and Print and clear Buffer and Read Next
+            //Buffer 3 => Print and clear Buffer and +X and Read Next
+          if (string_length(my_buff) == 2)
+          {
+            *(my_buff+2) = 'x';
+            printf("Fifth Rounder: MB: %s, INDEX=%d\n", my_buff, index);
+            for (int i = 0; i < 26; ++i)
+            {
+              if (compare_string(my_buff, *(fm_table_ptr+i)) == 0)
+              {
+                char *fm_key_ptr_a = fm_key;
+                fprintf(stdout, "%c\n", *(fm_key_ptr_a+i));
+                //clear buffer
+                *(my_buff) = '\0';
+                *(my_buff+1) = '\0';
+                *(my_buff+2) = '\0';
+                break;
+              }
+            }
+            continue;
+          }
+          else {
+            printf("Sixth Rounder: MB: %s, INDEX=%d\n", my_buff, index);
+            for (int i = 0; i < 26; ++i)
+            {
+              if (compare_string(my_buff, *(fm_table_ptr+i)) == 0)
+              {
+                char *fm_key_ptr_a = fm_key;
+                fprintf(stdout, "%c\n", *(fm_key_ptr_a+i));
+                //clear buffer
+                *(my_buff) = '\0';
+                *(my_buff+1) = '\0';
+                *(my_buff+2) = '\0';
+                break;
+              }
+            }
+            *(my_buff) = 'x';
+            continue;
+          }
+        }
+        //cleaner
+        if (cleaner(morse_string, my_buff, index)==1)
+          {
+            continue;
+          }
+      }
+      else if (string_length(my_buff) == 2){
+        int index = 0;
+        index = morse_buff_allocator(morse_string, my_buff, 3, index);
+        printf("Seventh Rounder: MB: %s, INDEX=%d\n", my_buff, index);
+        if (index == 0)
+        {
+            //Buffer 3 => Print and clear Buffer and +X and Read Next
+          printf("11 Rounder: MB: %s, INDEX=%d\n", my_buff, index);
+          for (int i = 0; i < 26; ++i)
+          {
+            if (compare_string(my_buff, *(fm_table_ptr+i)) == 0)
+            {
+              char *fm_key_ptr_a = fm_key;
+              fprintf(stdout, "%c\n", *(fm_key_ptr_a+i));
+                //clear buffer
+              *(my_buff) = '\0';
+              *(my_buff+1) = '\0';
+              *(my_buff+2) = '\0';
+              break;
+            }
+          }
+          *(my_buff) = 'x';
+          continue;
+        }
+          //This means Morse_string is > 1 that Print => flush B =>Take Morse_String
+        printf("8 Rounder: MB: %s, INDEX=%d\n", my_buff, index);
+        for (int i = 0; i < 26; ++i)
+        {
+          if (compare_string(my_buff, *(fm_table_ptr+i)) == 0)
+          {
+            char *fm_key_ptr_a = fm_key;
+            fprintf(stdout, "%c\n", *(fm_key_ptr_a+i));
+                //clear buffer
+            *(my_buff) = '\0';
+            *(my_buff+1) = '\0';
+            *(my_buff+2) = '\0';
+            break;
+          }
+        }
+        while (const_string_length(morse_string) - index > 2){
+            //=>Assign 3 letter to my_buff and record the index at that point (or take out those three from first and pull the rest to front)
+          index = morse_buff_allocator(morse_string, my_buff, 3, index);
+          printf("9 Rounder: MB: %s, INDEX=%d\n", my_buff, index);
+          for (int i = 0; i < 26; ++i)
+          {
+            if (compare_string(my_buff, *(fm_table_ptr+i)) == 0)
+            {
+              char *fm_key_ptr_a = fm_key;
+              fprintf(stdout, "%c\n", *(fm_key_ptr_a+i));
+                //clear buffer
+              *(my_buff) = '\0';
+              *(my_buff+1) = '\0';
+              *(my_buff+2) = '\0';
+              break;
+            }
+          }
+          if (index == 0)
+          {
+            break; //That there is nothing to print, read another char
+          }
+        }
+        if (index == 0)
+        {
+            //Buffer 3 => Print and clear Buffer and +X and Read Next
+          printf("10 Rounder: MB: %s, INDEX=%d\n", my_buff, index);
+          for (int i = 0; i < 26; ++i)
+          {
+            if (compare_string(my_buff, *(fm_table_ptr+i)) == 0)
+            {
+              char *fm_key_ptr_a = fm_key;
+              fprintf(stdout, "%c\n", *(fm_key_ptr_a+i));
+                //clear buffer
+              *(my_buff) = '\0';
+              *(my_buff+1) = '\0';
+              *(my_buff+2) = '\0';
+              break;
+            }
+          }
+          *(my_buff) = 'x';
+          continue;
+        }
+        if (cleaner(morse_string, my_buff, index)==1)
+          {
+            continue;
+          }
+      }
+      else{
+        printf("Can't Be Here\n");
+        printf("The Buff is: %s, The length is %d\n" ,my_buff, string_length(my_buff));
       }
     }
-    fclose(file);
   }
   return 1;
 }
-int fm_decrypter(char *morse_string, const char *alphabet){
+int fm_decrypter(const char *morse_string, const char *alphabet){
   return 0;
 }
 int fm_cipher(unsigned short mode, const char *alphabet){
   if((((mode >> 13) & 1) == 0)){
-    // return fm_encrypter(col, alphabet);
+    return fm_encrypter(alphabet);
   }
   if((((mode >> 13) & 1) == 1)){
     // return fm_decrypter(col, alphabet);
@@ -781,32 +1105,94 @@ void fm_cipher_helper(int index){
     }
   }
 }
-//works only when morse_string has equal to or more than 3
-int ft_traverser(char *morse_string, char *morse_string_buff, char **table){
+//Return index
+int morse_buff_allocator(const char *morse_string, char *my_buff, int size, int index){
   int i = 0;
   int j = 0;
-  //when buff is not empty, buff can only be up to 2 char
-  while (*(morse_string_buff)!='\0')
+  if (*(morse_string+index) == '\0')
   {
-    while (*(morse_string_buff+i) == **(table+i)+j){
-
-    }
-    i++;
+    return 0;
   }
-//big_nb calls
+  while (*(my_buff+i) == '\0')
+  {
+    *(my_buff+i) = *(morse_string+index+j);
+    i++;
+    j++;
+    if(*(morse_string+index+j) == '\0'){
+      return 0;
+    }
+    if ( i == size)
+    {
+      return index+j;
+    }
+  }
+  while(*(my_buff+i) != '\0'){
+    i++;
+    while (*(my_buff+i) == '\0'){
+      *(my_buff+i) = *(morse_string+index+j);
+      i++;
+      j++;
+      if (*(morse_string+index+j) == '\0')
+      {
+        return 0;
+      }
+      if (i == size)
+      {
+        return index+j;
+      }
+    }
+  }
   return 0;
 }
-int string_compare(char *first, char *second)
-{
-   while(*first==*second)
-   {
-      if ( *first == '\0' || *second == '\0' )
-         break;
-      first++;
-      second++;
-   }
-   if( *first == '\0' && *second == '\0' )
+int cleaner(const char *morse_string, char *my_buff, int index){
+  const char **fm_table_ptr = fractionated_table;
+  int second_F = morse_buff_allocator(morse_string, my_buff, 3, index);
+  if (second_F != 0)
+  {
+    printf("SOMETHING GOT WAY WRONGGGGG\n");
+    return 0;
+  }
+  if (compare_string("xx", morse_string) != 0)
+  {
+    int forX = morse_buff_allocator("x", my_buff, 3, 0);
+    if (forX != 0)
+    {
+      printf("HOLY, SOMETHING GOT WAY WRONGGGGG\n");
       return 0;
-   else
-      return -1;
+    }
+  }
+  if (string_length(my_buff) == 3)
+  {
+    for (int i = 0; i < 26; ++i)
+    {
+      if (compare_string(my_buff, *(fm_table_ptr+i)) == 0)
+      {
+        char *fm_key_ptr_a = fm_key;
+        fprintf(stdout, "%c\n", *(fm_key_ptr_a+i));
+                //clear buffer
+        *(my_buff) = '\0';
+        *(my_buff+1) = '\0';
+        *(my_buff+2) = '\0';
+        break;
+      }
+    }
+    return 1;
+  }
+  return 1;
+}
+
+int compare_string(char *first, const char *second)
+{
+ while(*first==*second)
+ {
+  if ( *first == '\0' || *second == '\0' )
+   break;
+
+ first++;
+ second++;
+}
+if( *first == '\0' && *second == '\0' )
+  return 0;
+else
+  return -1;
 }
