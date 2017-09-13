@@ -667,7 +667,6 @@ int fm_mtable_indexer(const char *morse_string, char c){
   }
   if (c == '\n')
   {
-    fprintf(stdout, "%c", c);
     return -2;
   }
   if (c == ' ') //treat multiple white space as one
@@ -698,10 +697,11 @@ void fm_ktable_indexer(const char *alphabet){
 }
 }
 int fm_encrypter(const char *alphabet){
-  int white_space = 0; //for counting continuous ws
+  int fme_counter = 0;
+  int white_space = 0; //for counting consecutive ws
+  int new_line = 0; //for counting consecutive nl
   long space1;
   char *my_buff = (char *) &space1; //for containing the last char
-  const char *indicator =""; //indicate whether word has finished or the letter has finished
   const char **fm_table_ptr = fractionated_table;
   const char **morse_table_ptr = morse_table;
   int c = 1;
@@ -712,32 +712,80 @@ int fm_encrypter(const char *alphabet){
   *(my_buff+3) = '\0';
   while (c != EOF){
     c = getchar();
-    //printf("\nTHe very Input: %c\n", c);
+    //printf("\nTHe very Input: %c, BUFF: %s\n", c, my_buff);
     const char *morse_string = "";
+    const char *indicator =""; //indicate whether word has finished or the letter has finished
     int index_mt = fm_mtable_indexer(morse_string, c);
     switch(index_mt){
       case -1:
+      new_line = 0;
       white_space = 0;
       return 0;
       case -2:
-      white_space = 0;
-      continue;
+      fme_counter++;
+      new_line++;
+      white_space=0;
+      if (new_line > 1)
+      {
+        continue;
+      }
+      if (*my_buff == '\0')
+      {
+        indicator = "x";
+      }
+      else if (*(my_buff+string_length(my_buff)-1) == 'x')
+      {
+        *(my_buff+string_length(my_buff)-1) = '\0'; //buff is emptied
+        //printf("When white space, Buffer: %s\n", my_buff);
+        indicator = "xx";
+      }
+      else if (*indicator == '\0')
+      {
+        indicator = "xx";
+      }
+          int index_WSN = morse_buff_allocator(indicator, my_buff, 3, 0);
+          //printf("When white space+ALLOCATE, Buffer: %s\n", my_buff);
+          if (string_length(my_buff) == 3)
+          {
+            for (int i = 0; i < 26; ++i)
+            {
+              if (compare_string(my_buff, *(fm_table_ptr+i)) == 0)
+              {
+                char *fm_key_ptr_a = fm_key;
+                fprintf(stdout, "%c", *(fm_key_ptr_a+i));
+                //clear buffer
+              *(my_buff) = '\0';
+              *(my_buff+1) = '\0';
+              *(my_buff+2) = '\0';
+                break;
+              }
+            }
+          }
+        fprintf(stdout, "\n");
+        continue; //That there is nothing to print, read another char
       case -3:
+      new_line = 0;
       white_space ++;
       if (white_space > 1)
       {
         continue;
       }
-      if (*(my_buff+string_length(my_buff)-1) == 'x')
-      {
-        *(my_buff+string_length(my_buff)-1) = '\0';
-        indicator = "xx";
-      }
       if (*my_buff == '\0')
       {
-        indicator = "x"; //how to??
+        indicator = "x";
+      }
+      else if (*(my_buff+string_length(my_buff)-1) == 'x')
+      {
+        *(my_buff+string_length(my_buff)-1) = '\0'; //buff is emptied
+        //printf("When white space, Buffer: %s\n", my_buff);
+        indicator = "xx";
+      }
+      else if (*indicator == '\0')
+      {
+        indicator = "xx";
       }
           int index_WS = morse_buff_allocator(indicator, my_buff, 3, 0);
+          //printf("When white space+ALLOCATE, Buffer: %s\n", my_buff);
           if (string_length(my_buff) == 3)
           {
             for (int i = 0; i < 26; ++i)
@@ -755,13 +803,8 @@ int fm_encrypter(const char *alphabet){
             }
           }
             continue; //That there is nothing to print, read another char
-          if (cleaner(indicator, my_buff, index_WS)==1)
-          {
-            continue;
-          }
-          //printf("SOMETHING GOOOO WRONGGG");
-          continue;
           default:
+          new_line = 0;
           white_space = 0;
           morse_string = *(morse_table_ptr+index_mt); //Get morse code
           //printf("\nFor Beginning: MS: %s, MB: %s\n", morse_string, my_buff);
@@ -1119,6 +1162,7 @@ int morse_buff_allocator(const char *morse_string, char *my_buff, int size, int 
     i++;
     j++;
     if(*(morse_string+index+j) == '\0'){
+      //printf("\nWhen white space, In ALLOC=>Buffer: %s, INDEX:%d\n", my_buff, index+j);
       return 0;
     }
     if ( i == size)
