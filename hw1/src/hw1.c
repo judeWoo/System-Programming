@@ -1244,7 +1244,36 @@ int fm_decrypter(const char *alphabet){
     // printf("INPUT: %c\n", c);
     if (c == EOF)
     {
-        break;
+        if (string_length(buffer) == 1)
+        {
+            for (int i = 0; i < string_length(ascii_alphabet); ++i)
+            {
+                if (*(buffer) == **(morse_table_ptr+i) && const_string_length(*(morse_table_ptr+i)) == 1)
+                {
+                    fprintf(stdout, "%c\n", *(ascii_alphabet+i));
+                    break;
+                }
+            }
+            break;
+        }
+        else if (string_length(buffer) == 2)
+        {
+            for (int i = 0; i < string_length(ascii_alphabet); ++i)
+            {
+                if (*(buffer) == **(morse_table_ptr+i) && const_string_length(*(morse_table_ptr+i)) == 2)
+                {
+                    if (*(buffer+1) == *(*(morse_table_ptr+i)+1))
+                    {
+                        fprintf(stdout, "%c\n", *(ascii_alphabet+i));
+                        break;
+                    }
+                }
+            }
+            break;
+        }
+        else{
+            break;
+        }
     }
     //Read Alphabet => FM_KEY => FT => GET 3-DIGIT-MORSE CODE
     if (c == '\n')
@@ -1758,8 +1787,8 @@ void morse_table_matcher_sub(const char *morse_code, char *buffer, char *buffer_
 else {
     for (int i = 0; i < string_length(ascii_alphabet); ++i)
     {
-        printf("Target String: %s\n", *(morse_table_ptr+i));
-        printf("Buffer: %s, SUB BUFFER: %s\n",buffer, buffer_sub);
+        // printf("Target String: %s\n", *(morse_table_ptr+i));
+        // printf("Buffer: %s, SUB BUFFER: %s\n",buffer, buffer_sub);
       if (*buffer == **(morse_table_ptr+i) && const_string_length(*(morse_table_ptr+i)) == 5)
       {
         if (*(buffer+1) == *(*(morse_table_ptr+i)+1))
