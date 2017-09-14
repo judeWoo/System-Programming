@@ -1241,7 +1241,7 @@ int fm_decrypter(const char *alphabet){
   //Start to Read characters
   while(c != EOF){
     c = getchar();
-    printf("INPUT: %c\n", c);
+    // printf("INPUT: %c\n", c);
     if (c == EOF)
     {
         break;
@@ -1266,15 +1266,15 @@ int fm_decrypter(const char *alphabet){
       {
         if (*(buffer_sub) != '\0')
         {
-            printf("\nBefore Passing to MATCHER SUB, Morse code: %s, Buffer: %s, Sub Buffer: %s\n", morse_code, buffer, buffer_sub);
+            // printf("\nBefore Passing to MATCHER SUB, Morse code: %s, Buffer: %s, Sub Buffer: %s\n", morse_code, buffer, buffer_sub);
             morse_table_matcher_sub(morse_code, buffer, buffer_sub, i);
             flag = 1;
-            printf("\nAfter Passing to MATCHER SUB, Morse code: %s, Buffer: %s, Sub Buffer: %s\n", morse_code, buffer, buffer_sub);
+            // printf("\nAfter Passing to MATCHER SUB, Morse code: %s, Buffer: %s, Sub Buffer: %s\n", morse_code, buffer, buffer_sub);
             break;
         }
-        printf("\nBefore Passing to MATCHER, Morse code: %s, Buffer: %s\n", morse_code, buffer);
+        // printf("\nBefore Passing to MATCHER, Morse code: %s, Buffer: %s\n", morse_code, buffer);
         morse_table_matcher(morse_code, buffer, i);
-        printf("\nAfter Passing to MATCHER, Morse code: %s, Buffer: %s\n", morse_code, buffer);
+        // printf("\nAfter Passing to MATCHER, Morse code: %s, Buffer: %s\n", morse_code, buffer);
         flag =1;
         break;
       }
@@ -1287,6 +1287,14 @@ int fm_decrypter(const char *alphabet){
             if (*(morse_code+2) != 'x')
             {
                 index_2_x_flag = 0;
+                if (string_length(buffer) > 0 && string_length(buffer) < 3)
+                {
+                    // printf("\nBefore Passing to SUB BUFFER, Morse code: %s, Buffer: %s, Sub Buffer: %s\n", morse_code, buffer, buffer_sub);
+                    *buffer_sub = *morse_code;
+                    *(buffer_sub+1) = *(morse_code+1);
+                    *(buffer_sub+2) = *(morse_code+2);
+                    continue;
+                }
             }
         }
     }
@@ -1296,15 +1304,9 @@ int fm_decrypter(const char *alphabet){
       flag = 0;
       continue;
     }
-    if (string_length(buffer) > 0 && string_length(buffer) < 3)
-    {
-        *buffer_sub = *morse_code;
-        *(buffer_sub+1) = *(morse_code+1);
-        *(buffer_sub+2) = *(morse_code+2);
-        continue;
-    }
+
     //Save Morse Code inside the buffer and check if buffer is full
-    printf("\nBefore Passing to Buffer, Morse code: %s, Buffer: %s\n", morse_code, buffer);
+    // printf("\nBefore Passing to Buffer, Morse code: %s, Buffer: %s\n", morse_code, buffer);
     if (buffer_filler(morse_code, buffer) == 0)
     {
       //If Buffer is full, Print buffer+morse code and continue; (Guarantee that it will be a word);
@@ -1337,7 +1339,7 @@ int fm_decrypter(const char *alphabet){
         }
       }
     }
-    printf("\nBefore Next Rotate, Morse code: %s, Buffer: %s\n", morse_code, buffer);
+    // printf("\nBefore Next Rotate, Morse code: %s, Buffer: %s\n", morse_code, buffer);
   }
   return 1;
 }
@@ -1825,7 +1827,7 @@ else if (index == 1)
                 {
                   if (*(buffer_sub+1) == *(*(morse_table_ptr+i)+2))
                   {
-                    if (*(buffer+2) == *(*(morse_table_ptr+i)+3))
+                    if (*(buffer_sub+2) == *(*(morse_table_ptr+i)+3))
                     {
                       if (*(morse_code) == *(*(morse_table_ptr+i)+4))
                       {
