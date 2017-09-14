@@ -1208,17 +1208,18 @@ int cleaner(const char *morse_string, char *my_buff, int index){
 
 int compare_string(char *first, const char *second)
 {
- while(*first==*second)
- {
-  if ( *first == '\0' || *second == '\0' )
-   break;
- first++;
- second++;
+    int i = 0;
+    while (*(first+i)==*(second+i))
+    {
+      if ( *(first+i) == '\0' || *(second+i) == '\0' ){
+        break;
+    }
+    i++;
+    if ( *(first+i) == '\0' && *(second+i) == '\0' ){
+        return 0;
+    }
 }
-if( *first == '\0' && *second == '\0' )
-  return 0;
-else
-  return -1;
+return -1;
 }
 // read char, use fm_key to find equivalent morse string inside fractionated table
 // then search inside 3 digti morse string to find x. If not found, save it on buffer and look on the next one.
@@ -1240,7 +1241,7 @@ int fm_decrypter(const char *alphabet){
   //Start to Read characters
   while(c != EOF){
     c = getchar();
-    //printf("INPUT: %c\n", c);
+    printf("INPUT: %c\n", c);
     if (c == EOF)
     {
         break;
@@ -1265,15 +1266,15 @@ int fm_decrypter(const char *alphabet){
       {
         if (*(buffer_sub) != '\0')
         {
-            //printf("\nBefore Passing to MATCHER SUB, Morse code: %s, Buffer: %s, Sub Buffer: %s\n", morse_code, buffer, buffer_sub);
+            printf("\nBefore Passing to MATCHER SUB, Morse code: %s, Buffer: %s, Sub Buffer: %s\n", morse_code, buffer, buffer_sub);
             morse_table_matcher_sub(morse_code, buffer, buffer_sub, i);
             flag = 1;
-            //printf("\nAfter Passing to MATCHER SUB, Morse code: %s, Buffer: %s, Sub Buffer: %s\n", morse_code, buffer, buffer_sub);
+            printf("\nAfter Passing to MATCHER SUB, Morse code: %s, Buffer: %s, Sub Buffer: %s\n", morse_code, buffer, buffer_sub);
             break;
         }
-        //printf("\nBefore Passing to MATCHER, Morse code: %s, Buffer: %s\n", morse_code, buffer);
+        printf("\nBefore Passing to MATCHER, Morse code: %s, Buffer: %s\n", morse_code, buffer);
         morse_table_matcher(morse_code, buffer, i);
-        //printf("\nAfter Passing to MATCHER, Morse code: %s, Buffer: %s\n", morse_code, buffer);
+        printf("\nAfter Passing to MATCHER, Morse code: %s, Buffer: %s\n", morse_code, buffer);
         flag =1;
         break;
       }
@@ -1303,13 +1304,13 @@ int fm_decrypter(const char *alphabet){
         continue;
     }
     //Save Morse Code inside the buffer and check if buffer is full
-    //printf("\nBefore Passing to Buffer, Morse code: %s, Buffer: %s\n", morse_code, buffer);
+    printf("\nBefore Passing to Buffer, Morse code: %s, Buffer: %s\n", morse_code, buffer);
     if (buffer_filler(morse_code, buffer) == 0)
     {
       //If Buffer is full, Print buffer+morse code and continue; (Guarantee that it will be a word);
       for (int i = 0; i < string_length(ascii_alphabet); ++i)
       {
-        if (*buffer == **(morse_table_ptr+i))
+        if ((*buffer == **(morse_table_ptr+i)) && (const_string_length(*(morse_table_ptr+i)) == 6))
         {
           if (*(buffer+1) == *(*(morse_table_ptr+i)+1))
           {
@@ -1319,7 +1320,7 @@ int fm_decrypter(const char *alphabet){
               {
                 if (*(morse_code+1) == *(*(morse_table_ptr+i)+4))
                 {
-                  if ((*(morse_code+2) == *(*(morse_table_ptr+i)+5)) && const_string_length(*(morse_table_ptr+i)) == 6)
+                  if (*(morse_code+2) == *(*(morse_table_ptr+i)+5))
                   {
                     fprintf(stdout, "%c", *(ascii_alphabet+i));
                     //clear buffer (no rest)
@@ -1336,7 +1337,7 @@ int fm_decrypter(const char *alphabet){
         }
       }
     }
-    //printf("\nBefore Next Rotate, Morse code: %s, Buffer: %s\n", morse_code, buffer);
+    printf("\nBefore Next Rotate, Morse code: %s, Buffer: %s\n", morse_code, buffer);
   }
   return 1;
 }
@@ -1523,9 +1524,9 @@ void morse_table_matcher(const char *morse_code, char *buffer, int index){
       {
         for (int i = 0; i < string_length(ascii_alphabet); ++i)
         {
-          if (*buffer == **(morse_table_ptr+i))
+          if ((*buffer == **(morse_table_ptr+i))&& (const_string_length(*(morse_table_ptr+i))==2))
           {
-            if ((*(morse_code) == *(*(morse_table_ptr+i)+1)) && (const_string_length(*(morse_table_ptr+i))==2))
+            if (*(morse_code) == *(*(morse_table_ptr+i)+1))
             {
               fprintf(stdout, "%c", *(ascii_alphabet+i));
               if (*(morse_code+2) == 'x')
@@ -1552,11 +1553,11 @@ void morse_table_matcher(const char *morse_code, char *buffer, int index){
       {
         for (int i = 0; i < string_length(ascii_alphabet); ++i)
         {
-          if (*buffer == **(morse_table_ptr+i))
+          if ((*buffer == **(morse_table_ptr+i)) && (const_string_length(*(morse_table_ptr+i)) == 3))
           {
             if (*(buffer+1) == *(*(morse_table_ptr+i)+1))
             {
-              if ((*(morse_code) == *(*(morse_table_ptr+i)+2)) && (const_string_length(*(morse_table_ptr+i)) == 3))
+              if (*(morse_code) == *(*(morse_table_ptr+i)+2))
               {
                 fprintf(stdout, "%c", *(ascii_alphabet+i));
                 if (*(morse_code+2) == 'x')
@@ -1583,13 +1584,13 @@ void morse_table_matcher(const char *morse_code, char *buffer, int index){
       else {
         for (int i = 0; i < string_length(ascii_alphabet); ++i)
         {
-          if (*buffer == **(morse_table_ptr+i))
+          if (*buffer == **(morse_table_ptr+i) && const_string_length(*(morse_table_ptr+i))==4)
           {
             if (*(buffer+1) == *(*(morse_table_ptr+i)+1))
             {
               if (*(buffer+2) == *(*(morse_table_ptr+i)+2))
               {
-                if (*(morse_code) == *(*(morse_table_ptr+i)+3) && const_string_length(*(morse_table_ptr+i))==4)
+                if (*(morse_code) == *(*(morse_table_ptr+i)+3))
                 {
                   fprintf(stdout, "%c", *(ascii_alphabet+i));
                   if (*(morse_code+2) == 'x')
@@ -1620,11 +1621,11 @@ void morse_table_matcher(const char *morse_code, char *buffer, int index){
       {
         for (int i = 0; i < string_length(ascii_alphabet); ++i)
         {
-          if (*buffer == **(morse_table_ptr+i))
+          if (*buffer == **(morse_table_ptr+i) && const_string_length(*(morse_table_ptr+i)) == 3)
           {
             if (*(morse_code) == *(*(morse_table_ptr+i)+1))
             {
-              if (*(morse_code+1) == *(*(morse_table_ptr+i)+2) && const_string_length(*(morse_table_ptr+i)) == 3)
+              if (*(morse_code+1) == *(*(morse_table_ptr+i)+2))
               {
                 fprintf(stdout, "%c", *(ascii_alphabet+i));
                 //clear buffer (no rest)
@@ -1642,13 +1643,13 @@ void morse_table_matcher(const char *morse_code, char *buffer, int index){
       {
         for (int i = 0; i < string_length(ascii_alphabet); ++i)
         {
-          if (*buffer == **(morse_table_ptr+i))
+          if (*buffer == **(morse_table_ptr+i) && const_string_length(*(morse_table_ptr+i)) == 4)
           {
             if (*(buffer+1) == *(*(morse_table_ptr+i)+1))
             {
               if (*(morse_code) == *(*(morse_table_ptr+i)+2))
               {
-                if (*(morse_code+1) == *(*(morse_table_ptr+i)+3) && const_string_length(*(morse_table_ptr+i)) == 4)
+                if (*(morse_code+1) == *(*(morse_table_ptr+i)+3))
                 {
                   fprintf(stdout, "%c", *(ascii_alphabet+i));
                   //clear buffer (no rest)
@@ -1666,7 +1667,7 @@ void morse_table_matcher(const char *morse_code, char *buffer, int index){
       else {
         for (int i = 0; i < string_length(ascii_alphabet); ++i)
         {
-          if (*buffer == **(morse_table_ptr+i))
+          if (*buffer == **(morse_table_ptr+i) && const_string_length(*(morse_table_ptr+i)) == 5)
           {
             if (*(buffer+1) == *(*(morse_table_ptr+i)+1))
             {
@@ -1674,7 +1675,7 @@ void morse_table_matcher(const char *morse_code, char *buffer, int index){
               {
                 if (*(morse_code) == *(*(morse_table_ptr+i)+3))
                 {
-                  if (*(morse_code+1) == *(*(morse_table_ptr+i)+4) && const_string_length(*(morse_table_ptr+i)) == 5)
+                  if (*(morse_code+1) == *(*(morse_table_ptr+i)+4))
                   {
                     fprintf(stdout, "%c", *(ascii_alphabet+i));
                     //clear buffer (no rest)
@@ -1702,19 +1703,19 @@ void morse_table_matcher_sub(const char *morse_code, char *buffer, char *buffer_
       {
           for (int i = 0; i < string_length(ascii_alphabet); ++i)
           {
-              if (*buffer == **(morse_table_ptr+i))
+              if (*buffer == **(morse_table_ptr+i) && const_string_length(*(morse_table_ptr+i)) == 4)
               {
                 if (*(buffer_sub) == *(*(morse_table_ptr+i)+1))
                 {
                   if (*(buffer_sub+1) == *(*(morse_table_ptr+i)+2))
                   {
-                    if (*(buffer_sub+2) == *(*(morse_table_ptr+i)+3) && const_string_length(*(morse_table_ptr+i)) == 4)
+                    if (*(buffer_sub+2) == *(*(morse_table_ptr+i)+3))
                     {
                       fprintf(stdout, "%c", *(ascii_alphabet+i));
                       if (*(morse_code+1) == 'x')
                       {
                         fprintf(stdout, " ");
-                        *(buffer) = '\0';
+                        *(buffer) = *(morse_code+2);
                         *(buffer_sub) = '\0';
                         *(buffer_sub+1) = '\0';
                         *(buffer_sub+2) = '\0';
@@ -1755,7 +1756,9 @@ void morse_table_matcher_sub(const char *morse_code, char *buffer, char *buffer_
 else {
     for (int i = 0; i < string_length(ascii_alphabet); ++i)
     {
-      if (*buffer == **(morse_table_ptr+i))
+        printf("Target String: %s\n", *(morse_table_ptr+i));
+        printf("Buffer: %s, SUB BUFFER: %s\n",buffer, buffer_sub);
+      if (*buffer == **(morse_table_ptr+i) && const_string_length(*(morse_table_ptr+i)) == 5)
       {
         if (*(buffer+1) == *(*(morse_table_ptr+i)+1))
         {
@@ -1763,7 +1766,7 @@ else {
           {
             if (*(buffer_sub+1) == *(*(morse_table_ptr+i)+3))
             {
-              if (*(buffer_sub+2) == *(*(morse_table_ptr+i)+4) && const_string_length(*(morse_table_ptr+i)) == 5)
+              if (*(buffer_sub+2) == *(*(morse_table_ptr+i)+4))
               {
                   fprintf(stdout, "%c", *(ascii_alphabet+i));
                   if (*(morse_code+1) == 'x')
@@ -1816,7 +1819,7 @@ else if (index == 1)
       {
           for (int i = 0; i < string_length(ascii_alphabet); ++i)
           {
-              if (*buffer == **(morse_table_ptr+i))
+              if (*buffer == **(morse_table_ptr+i) && const_string_length(*(morse_table_ptr+i)) == 5)
               {
                 if (*(buffer_sub) == *(*(morse_table_ptr+i)+1))
                 {
@@ -1824,7 +1827,7 @@ else if (index == 1)
                   {
                     if (*(buffer+2) == *(*(morse_table_ptr+i)+3))
                     {
-                      if (*(morse_code) == *(*(morse_table_ptr+i)+4) && const_string_length(*(morse_table_ptr+i)) == 5)
+                      if (*(morse_code) == *(*(morse_table_ptr+i)+4))
                       {
                         fprintf(stdout, "%c", *(ascii_alphabet+i));
                         if (*(morse_code+2) == 'x')
@@ -1854,7 +1857,7 @@ else if (index == 1)
       else { //Morse String length 6
         for (int i = 0; i < string_length(ascii_alphabet); ++i)
         {
-          if (*buffer == **(morse_table_ptr+i))
+          if (*buffer == **(morse_table_ptr+i)&& const_string_length(*(morse_table_ptr+i)) == 6)
           {
             if (*(buffer+1) == *(*(morse_table_ptr+i)+1))
             {
@@ -1864,13 +1867,14 @@ else if (index == 1)
                 {
                   if (*(buffer_sub+2) == *(*(morse_table_ptr+i)+4))
                   {
-                    if (*(morse_code) == *(*(morse_table_ptr+i)+5) && const_string_length(*(morse_table_ptr+i)) == 6)
+                    if (*(morse_code) == *(*(morse_table_ptr+i)+5) )
                     {
                         fprintf(stdout, "%c", *(ascii_alphabet+i));
                         if (*(morse_code+2) == 'x')
                         {
                             fprintf(stdout, " ");
                             *(buffer) = '\0';
+                            *(buffer+1) = '\0';
                             *(buffer_sub) = '\0';
                             *(buffer_sub+1) = '\0';
                             *(buffer_sub+2) = '\0';
@@ -1879,6 +1883,7 @@ else if (index == 1)
                         }
                         //clear buffer and assign rest
                         *(buffer) = *(morse_code+2);
+                        *(buffer+1) = '\0';
                         *(buffer_sub) = '\0';
                         *(buffer_sub+1) = '\0';
                         *(buffer_sub+2) = '\0';
@@ -1896,7 +1901,7 @@ else if (index == 1)
   else{ //Morse String length 6
     for (int i = 0; i < string_length(ascii_alphabet); ++i)
     {
-      if (*buffer == **(morse_table_ptr+i))
+      if (*buffer == **(morse_table_ptr+i)  && const_string_length(*(morse_table_ptr+i)) == 6)
       {
         if (*(buffer_sub) == *(*(morse_table_ptr+i)+1))
         {
@@ -1906,7 +1911,7 @@ else if (index == 1)
             {
               if (*(morse_code) == *(*(morse_table_ptr+i)+4))
               {
-                if (*(morse_code+1) == *(*(morse_table_ptr+i)+5) && const_string_length(*(morse_table_ptr+i)) == 6)
+                if (*(morse_code+1) == *(*(morse_table_ptr+i)+5))
                 {
                     fprintf(stdout, "%c", *(ascii_alphabet+i));
                         //clear buffer and assign rest
