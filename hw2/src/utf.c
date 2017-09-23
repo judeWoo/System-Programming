@@ -4,6 +4,10 @@
 #include <sys/sendfile.h>
 #include <unistd.h>
 
+const char *STR_UTF16BE  = "UTF16BE";
+const char *STR_UTF16LE = "UTF16LE";
+const char *STR_UTF8  = "UTF8";
+
 convertion_func_t
 get_encoding_function()
 {
@@ -11,19 +15,19 @@ get_encoding_function()
     (program_state->encoding_from - program_state->encoding_to);
   switch (translate) {
     case utf8_to_utf16le:
-      return from_utf8_to_utf16le();
+      return from_utf8_to_utf16le;
     case utf8_to_utf16be:
-      return from_utf8_to_utf16be();
+      return from_utf8_to_utf16be;
     case utf16le_to_utf16be:
-      return from_utf16le_to_utf16be();
+      return from_utf16le_to_utf16be;
     case utf16be_to_utf16le:
-      return from_utf16be_to_utf16le();
+      return from_utf16be_to_utf16le;
     case utf16be_to_utf8:
-      return from_utf16be_to_utf8();
+      return from_utf16be_to_utf8;
     case utf16le_to_utf8:
-      return from_utf16le_to_utf8();
+      return from_utf16le_to_utf8;
     case transcribe_file:
-      return transcribe();
+      return transcribe;
   }
   return NULL;
 }
@@ -63,7 +67,7 @@ check_bom()
     program_state->encoding_from = UTF16LE;
     program_state->bom_length = 2;
   }
-  elsif(LOWER_TWO_BYTES(bom) == UTF16BE)
+  else if(LOWER_TWO_BYTES(bom) == UTF16BE)
   {
     info("Source BOM: %s", STR_UTF16BE);
     program_state->encoding_from = UTF16BE;
@@ -81,10 +85,34 @@ int
 transcribe(int infile, int outfile)
 {
   int ret = 0;
+  int bom;
   struct stat infile_stat;
   if (fstat(infile, &infile_stat) < 0) {
     perror("Could not stat infile");
     exit(EXIT_FAILURE);
+  }
+  bom = program_state->encoding_to;
+  switch(bom) {
+    case UTF16LE:
+      #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+        reverse_bytes(&bom, 2);
+      #endif
+      write_to_bigendian(outfile, &bom, 2);
+      break;
+    case UTF16BE:
+      #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+        reverse_bytes(&bom, 2);
+      #endif
+      write_to_bigendian(outfile, &bom, 2);
+      break;
+    case UTF8:
+      #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+        reverse_bytes(&bom, 3);
+      #endif
+      write_to_bigendian(outfile, &bom, 3);
+      break;
+    default:
+      return -1;
   }
   ret = sendfile(outfile, infile, NULL, infile_stat.st_size);
   return ret;
@@ -103,16 +131,14 @@ is_lower_surrogate_pair(utf16_glyph_t glyph)
 }
 
 code_point_t
-utf16_glyph_to_code_point(utf16_glyph_t *glyph)
+utf16_glyph_to_code_point(utf16_glyph_t glyph)
 {
   code_point_t ret = 0;
-  if(!is_upper_surrogate_pair(*glyph)) {
-    ret = glyph->upper_bytes;
+  if(!is_upper_surrogate_pair(glyph)) {
+    ret = glyph.upper_bytes;
   }
   else {
-    ret = (((glyph->upper_bytes - 0xD800) << 100) |
-          ((glyph->lower_bytes - 0xDC00) & 0x3FF)) +
-          0x10000;
+    ret = (((glyph.upper_bytes & 0x03FF) << 10) | (glyph.lower_bytes & 0x03FF)) + 0x10000;
   }
   return ret;
 }
@@ -120,5 +146,5 @@ utf16_glyph_to_code_point(utf16_glyph_t *glyph)
 bool
 is_code_point_surrogate(code_point_t code_point)
 {
-  return (code_point >= 10000);
+  return (code_point >= 0x10000);
 }

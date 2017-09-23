@@ -1,3 +1,6 @@
+#ifndef UTF_H
+#define UTF_H
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -10,9 +13,9 @@
 #define AS_BYTE(x) ((char*)x)
 #define AS_GLYF(x) ((utf8_glyph_t*)x)
 
-const char *STR_UTF16BE  = "UTF16BE";
-char *const STR_UTF16LE = "UTF16LE";
-char const *STR_UTF8  = "UTF8";
+extern const char *STR_UTF16BE;
+extern const char *STR_UTF16LE;
+extern const char *STR_UTF8;
 
 typedef enum { UTF16LE = 0xFFFE, UTF16BE = 0xFEFF, UTF8 = 0xBFBBEF } format_t;
 
@@ -37,13 +40,14 @@ typedef struct
 
 extern state_t *program_state;
 
+//If a pointer points utf8_byte_t, then this fills all of attributes(structs) inside utf8_byte_t with same bits.
 typedef union
 {
   struct
   {
     uint8_t remaining : 7;
     uint8_t bit : 1;
-  } top_one;
+  } top_one; //only for 1 byte, codepoint 0x00000-0x0007F
 
   struct
   {
@@ -133,7 +137,7 @@ int array_size(int count, char *array[]);
 
 format_t determine_format(char *argument);
 
-code_point_t utf16_glyph_to_code_point(utf16_glyph_t *glyph);
+code_point_t utf16_glyph_to_code_point(utf16_glyph_t glyph);
 
 utf8_glyph_t code_point_to_utf8_glyph(code_point_t code_point, size_t *size_of_glyph);
 
@@ -141,14 +145,15 @@ size_t utf8_glyph_size_of_code_point(code_point_t code_point);
 
 void print_state();
 
-char *bom_to_string(format_t bom);
+const char *bom_to_string(format_t bom);
 
 size_t remaining_utf8_bytes(utf8_byte_t first_byte);
 
 utf16_glyph_t code_point_to_utf16le_glyph(code_point_t code_point, size_t *size_of_glyph);
 utf16_glyph_t code_point_to_utf16be_glyph(code_point_t code_point, size_t *size_of_glyph);
 
-#define elsif else if
+//TODO
+// #define elsif else if
 
 #define USAGE(prog_name)                                                       \
   do {                                                                         \
@@ -172,3 +177,5 @@ utf16_glyph_t code_point_to_utf16be_glyph(code_point_t code_point, size_t *size_
             "            Will contain a Byte Order Marking (BOM)\n",           \
             (prog_name));                                                      \
   } while (0)
+
+#endif

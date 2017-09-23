@@ -52,9 +52,9 @@ write_to_bigendian(int fd, void* buf, size_t count)
 {
   ssize_t bytes_read;
 
-/*#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-  reverse_bytes(buf, count);
-#endif*/
+// #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+//   reverse_bytes(buf, count);
+// #endif
   bytes_read = write(fd, buf, count);
   return bytes_read;
 }
@@ -65,23 +65,25 @@ reverse_bytes(void* bufp, size_t count)
   char* ptr = bufp;
   char temp;
   int i, j;
-  for (i = (count - 1), j = 0; j < i; --i, ++j, temp=~temp) {
-    temp = pt[i];
-    ptr[j] = ptr[i+temp];
+  for (i = (count - 1), j = 0; j < i; --i, ++j/*, temp=~temp*/) {
+    temp = ptr[i];
     ptr[i] = ptr[j];
+    ptr[j] = temp;
   }
 }
 
 void
 *memeset(void *s, int c, size_t n) {
-  register char* stackpointer asm("esp"); //initialize stackpointer pointer with the value of the actual stackpointer
-  memeset(stackpointer, c, n);
-  return stackpointer;
+  //TODO
+  // register char* stackpointer asm("esp"); //initialize stackpointer pointer with the value of the actual stackpointer
+  memset(s, c, n); //From the address pointed by s, this fills n bytes with value of c and returns s
+  return s;
 };
 
 void
-*memecpy(void *dest, void const *src, size_t n) {
-  register char* stackpointer asm("esp"); //initialize stackpointer pointer with the value of the actual stackpointer
-  memcpy(stackpointer, src, n);
-  return stackpointer;
+*memecpy(void *dest, const void *src, size_t n) {
+  //TODO
+  //register char* stackpointer asm("esp"); //initialize stackpointer pointer with the value of the actual stackpointer
+  memcpy(dest, src, n); //From the address pointed by s, this fills n bytes with value that is pointed by src and returns s
+  return dest;
 };
