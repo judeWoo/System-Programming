@@ -13,7 +13,7 @@ char *optarg;
 
 state_t *program_state;
 
-void
+int
 parse_args(int argc, char *argv[])
 {
   int i;
@@ -96,6 +96,7 @@ parse_args(int argc, char *argv[])
     //TODO EDGE case: bin/utf +sdasd...
   }
   // free(joined_argv);
+  return 0;
 }
 
 format_t
@@ -153,7 +154,7 @@ array_size(int count, char *array[])
   return sum-1;
 }
 
-void
+int
 print_state()
 {
 // errorcase:
@@ -169,4 +170,5 @@ print_state()
          "};\n",
          program_state->encoding_to, program_state->encoding_from,
          program_state->in_file, program_state->out_file);
+  return 0;
 }

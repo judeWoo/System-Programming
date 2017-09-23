@@ -32,7 +32,7 @@ get_encoding_function()
   return NULL;
 }
 
-void
+int
 check_bom()
 {
   int fd;
@@ -56,7 +56,7 @@ check_bom()
     program_state->encoding_from = UTF8;
     program_state->bom_length = 3;
     close(fd);
-    return;
+    return 0;
   }
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
   reverse_bytes(&bom, 2);
@@ -79,6 +79,7 @@ check_bom()
     exit(EXIT_FAILURE);
   }
   close(fd);
+  return 0;
 }
 
 int
@@ -112,7 +113,7 @@ transcribe(int infile, int outfile)
       write_to_bigendian(outfile, &bom, 3);
       break;
     default:
-      return -1;
+      return -1; //error
   }
   ret = sendfile(outfile, infile, NULL, infile_stat.st_size);
   return ret;

@@ -6,11 +6,11 @@
 int
 from_utf16le_to_utf16be(int infile, int outfile)
 {
+  int ret = -1;
   int bom;
   utf16_glyph_t buf;
   ssize_t bytes_read;
   size_t bytes_to_write;
-  int ret = 0;
 
   bom = UTF16BE;
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
@@ -41,7 +41,7 @@ from_utf16le_to_utf16be(int infile, int outfile)
 int
 from_utf16le_to_utf8(int infile, int outfile)
 {
-  int ret = 0;
+  int ret = -1;
   int bom;
   utf16_glyph_t buf;
   ssize_t bytes_read;
