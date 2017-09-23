@@ -29,7 +29,6 @@ parse_args(int argc, char *argv[])
   }
 
   joined_argv = join_string_array(argc, argv); //joining command+argument
-  info("argc: %d argv: %s", argc, joined_argv);
   free(joined_argv); //free joined_argv pointer, which means it no longer points at sth
 
   program_state = Calloc(1, sizeof(state_t)); //save space for a pointer that points 1 element of state_t size and assign to program_state
