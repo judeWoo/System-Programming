@@ -85,8 +85,6 @@ from_utf16be_to_utf8(int infile, int outfile)
     }
     code_point = utf16_glyph_to_code_point(buf);
     utf8_buf = code_point_to_utf8_glyph(code_point, &size_of_glyph);
-    info("The character is UPPER: %x, LOWER: %x", buf.upper_bytes, buf.lower_bytes);
-    info("The code_point is %x", code_point);
     write_to_bigendian(outfile, &utf8_buf, size_of_glyph);
   }
   ret = bytes_read;
