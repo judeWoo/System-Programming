@@ -7,7 +7,7 @@ int
 from_utf8_to_utf16le(int infile, int outfile)
 {
   int index = 0;
-  int ret = 0;
+  int ret = -1;
   int bom;
   utf8_glyph_t utf8_buf;
   utf8_byte_t remaining_bytes_buf[3]; //temporary buffer
@@ -54,7 +54,7 @@ int
 from_utf8_to_utf16be(int infile, int outfile)
 {
   int index = 0;
-  int ret = 0;
+  int ret = -1;
   int bom;
   utf8_glyph_t utf8_buf;
   utf8_byte_t remaining_bytes_buf[3]; //temporary buffer
