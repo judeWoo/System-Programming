@@ -19,6 +19,7 @@ parse_args(int argc, char *argv[])
   int i;
   int opt_flag = 0;
   int err_flag = 0;
+  int err_opt_flag = 0;
   char option;
   char *joined_argv;
 
@@ -49,6 +50,10 @@ parse_args(int argc, char *argv[])
           opt_flag = 1;
           if (optopt != 'h')
           {
+            err_opt_flag = 1;
+            continue;
+
+            erroroptcase:
             fprintf(stderr, KRED "-%c is not a supported argument\n" KNRM, optopt);
             USAGE(argv[0]);
             exit(EXIT_FAILURE);
@@ -71,7 +76,13 @@ parse_args(int argc, char *argv[])
     }
     if (err_flag == 1)
     {
+        err_flag = 0;
         goto errorcase;
+    }
+    if (err_opt_flag == 1)
+    {
+        err_opt_flag = 0;
+        goto erroroptcase;
     }
     if (opt_flag == 0)
     {
