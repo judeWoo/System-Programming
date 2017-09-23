@@ -18,29 +18,32 @@ parse_args(int argc, char *argv[])
 {
   int i;
   int opt_flag = 0;
+  int err_flag = 0;
   char option;
   char *joined_argv;
-
-  //check for valid argument
-  if (argc > 6)
-  {
-    USAGE(argv[0]);
-    exit(EXIT_FAILURE); //TODO
-  }
 
   joined_argv = join_string_array(argc, argv); //joining command+argument
   free(joined_argv); //free joined_argv pointer, which means it no longer points at sth
 
   program_state = Calloc(1, sizeof(state_t)); //save space for a pointer that points 1 element of state_t size and assign to program_state
-  while ((option = getopt(argc, argv, "he:")) != -1) { //int getopt (int argc, char *const *argv, const char *options) when return -1, sets optind to first element of the argument that is not option
+  while ((option = getopt(argc, argv, "he:")) != -1) {
     switch (option) {
-      case 'e': {
+        case 'e': {
         opt_flag = 1;
-        info("Encoding Argument: %s", optarg);
-          //optarg points at the value of the option argument, for those options that accept arguments.
-          if ((program_state->encoding_to = determine_format(optarg)) == 0) //assign the value of encdoing_to with format_t
+        if ((optarg[0] == '-') && (optarg[1] == 'h') && (optarg[2] == '\0'))
+        {
+          USAGE(argv[0]);
+          exit(EXIT_SUCCESS);
+        }
+        if ((program_state->encoding_to = determine_format(optarg)) == 0)
+        {
+            err_flag = 1;
+            continue;
+
+            errorcase:
             print_state(); //print error msg if user-typed encoding format is wrong
-          break;
+        }
+        break;
         }
         case '?': {
           opt_flag = 1;
@@ -61,9 +64,14 @@ parse_args(int argc, char *argv[])
         }
         default: {
           opt_flag = 1;
-          break;
+          USAGE(argv[0]);
+          exit(EXIT_FAILURE);
         }
       }
+    }
+    if (err_flag == 1)
+    {
+        goto errorcase;
     }
     if (opt_flag == 0)
     {
@@ -76,7 +84,7 @@ parse_args(int argc, char *argv[])
     debug("%d optopt: %d", i, optopt); // stores an unknown option character || an option with a missing required argument
     debug("%d argv[optind]: %s", i, argv[optind]);
     //invalid case: the argument of the length 5 without -h
-    if(optind == 5)
+    if(optind >= 5)
     {
       USAGE(argv[0]);
       exit(EXIT_FAILURE);
