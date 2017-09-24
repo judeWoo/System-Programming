@@ -62,6 +62,7 @@ check_bom()
     program_state->encoding_from = UTF8;
     program_state->bom_length = 3;
     close(fd);
+    return;
   }
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
   reverse_bytes(&bom, 2);
