@@ -67,6 +67,9 @@ from_utf16be_to_utf8(int infile, int outfile)
     if (buf.upper_bytes > 0xDBFF)
     {
       fprintf(stderr, KRED "UNKNOWN CHARACTER\n" KNRM);
+      if(program_state != NULL) {
+        free(program_state);
+      }
       exit(EXIT_FAILURE);
     }
     if(is_upper_surrogate_pair(buf)) {
@@ -74,6 +77,9 @@ from_utf16be_to_utf8(int infile, int outfile)
         if (is_upper_surrogate_pair(buf) && !is_lower_surrogate_pair(buf))
         {
           fprintf(stderr, KRED "UNKNOWN CHARACTER\n" KNRM);
+          if(program_state != NULL) {
+            free(program_state);
+          }
           exit(EXIT_FAILURE);
         }
         break;

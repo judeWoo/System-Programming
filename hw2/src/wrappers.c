@@ -7,6 +7,9 @@ Malloc(size_t size)
   void* ret;
   if ((ret = malloc(size)) == NULL) {
     perror("Out of Memory");
+    if(program_state != NULL) {
+      free(program_state);
+    }
     exit(EXIT_FAILURE);
   }
   return ret;
@@ -18,6 +21,9 @@ Calloc(size_t nmemb, size_t size)
   void* ret;
   if ((ret = calloc(nmemb, size)) == NULL) {
     perror("Out of Memory");
+    if(program_state != NULL) {
+      free(program_state);
+    }
     exit(EXIT_FAILURE);
   }
   return ret;
@@ -30,6 +36,9 @@ Open(char const* pathname, int flags)
   if ((fd = open(pathname, flags, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) < 0) {
     perror("Could Not Open file");
     fprintf(stderr, "%s\n", pathname);
+    if(program_state != NULL) {
+      free(program_state);
+    }
     exit(EXIT_FAILURE);
   }
   return fd;

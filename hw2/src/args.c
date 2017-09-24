@@ -13,7 +13,7 @@ char *optarg;
 
 state_t *program_state;
 
-int
+void
 parse_args(int argc, char *argv[])
 {
   int i;
@@ -24,15 +24,18 @@ parse_args(int argc, char *argv[])
   char *joined_argv;
 
   joined_argv = join_string_array(argc, argv); //joining command+argument
-  free(joined_argv); //free joined_argv pointer, which means it no longer points at sth
+  free(joined_argv);
 
-  program_state = Calloc(1, sizeof(state_t)); //save space for a pointer that points 1 element of state_t size and assign to program_state
+  program_state = Calloc(1, sizeof(state_t)); //save space for a pointer that points 1 element of state_t size
+
   while ((option = getopt(argc, argv, "he:")) != -1) {
     switch (option) {
         case 'e': {
         opt_flag = 1;
+        err_flag = 0;
         if ((optarg[0] == '-') && (optarg[1] == 'h') && (optarg[2] == '\0'))
         {
+          free(program_state);
           USAGE(argv[0]);
           exit(EXIT_SUCCESS);
         }
@@ -54,6 +57,7 @@ parse_args(int argc, char *argv[])
             continue;
 
             erroroptcase:
+            free(program_state);
             fprintf(stderr, KRED "-%c is not a supported argument\n" KNRM, optopt);
             USAGE(argv[0]);
             exit(EXIT_FAILURE);
@@ -64,11 +68,13 @@ parse_args(int argc, char *argv[])
         }
         case 'h': {
           opt_flag = 1;
+          free(program_state);
           USAGE(argv[0]);
-          exit(0);
+          exit(EXIT_SUCCESS);
         }
         default: {
           opt_flag = 1;
+          free(program_state);
           USAGE(argv[0]);
           exit(EXIT_FAILURE);
         }
@@ -86,35 +92,33 @@ parse_args(int argc, char *argv[])
     }
     if (opt_flag == 0)
     {
+      free(program_state);
       USAGE(argv[0]);
       exit(EXIT_FAILURE);
     }
-  for (i = 0; optind < argc; ++i) {
+  for (i = optind; i < argc; ++i) {
     debug("%d opterr: %d", i, opterr); // opterr's value not zero, prints error
     debug("%d optind: %d", i, optind); // the index of the next element of the argv array. 1 is set for init
     debug("%d optopt: %d", i, optopt); // stores an unknown option character || an option with a missing required argument
-    debug("%d argv[optind]: %s", i, argv[optind]);
+    debug("%d argv[optind]: %s", i, argv[i]);
     //invalid case: the argument of the length 5 without -h
-    if(optind >= 5)
+    if(optind != (argc - 2))
     {
+      free(program_state);
       USAGE(argv[0]);
       exit(EXIT_FAILURE);
     }
     else
     {
       if (program_state->in_file == NULL) {
-        program_state->in_file = argv[optind];
+        program_state->in_file = argv[i];
       }
       else if(program_state->out_file == NULL)
       {
-        program_state->out_file = argv[optind];
+        program_state->out_file = argv[i];
       }
-      optind++;
     }
-    //TODO EDGE case: bin/utf +sdasd...
   }
-  // free(joined_argv);
-  return 0;
 }
 
 format_t
@@ -148,7 +152,7 @@ join_string_array(int count, char *array[])
   int len = 0, str_len, cur_str_len;
   // TODO
   str_len = array_size(count, array); // the length of joint string of command+argument
-  ret = (char *) malloc(str_len * sizeof(char)); // check this it might be wrong
+  ret = (char *) Malloc(str_len * sizeof(char)); // check this it might be wrong
 
   for (i = 0; i < count; ++i) {
     cur_str_len = strlen(array[i]);
@@ -172,12 +176,13 @@ array_size(int count, char *array[])
   return sum-1;
 }
 
-int
+void
 print_state()
 {
 // errorcase:
   if (program_state->encoding_to == 0) {
     error("program_state is %p", (void*)program_state);
+    free(program_state);
     exit(EXIT_FAILURE);
   }
   info("program_state {\n"
@@ -188,5 +193,4 @@ print_state()
          "};\n",
          program_state->encoding_to, program_state->encoding_from,
          program_state->in_file, program_state->out_file);
-  return 0;
 }

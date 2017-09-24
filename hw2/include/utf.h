@@ -127,9 +127,9 @@ bool is_lower_surrogate_pair(utf16_glyph_t glyph);
 
 bool is_code_point_surrogate(code_point_t code_point);
 
-int check_bom();
+void check_bom();
 
-int parse_args(int argc, char *argv[]);
+void parse_args(int argc, char *argv[]);
 
 char *join_string_array(int argc, char *argv[]);
 
@@ -143,7 +143,7 @@ utf8_glyph_t code_point_to_utf8_glyph(code_point_t code_point, size_t *size_of_g
 
 size_t utf8_glyph_size_of_code_point(code_point_t code_point);
 
-int print_state();
+void print_state();
 
 const char *bom_to_string(format_t bom);
 

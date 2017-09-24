@@ -32,7 +32,7 @@ get_encoding_function()
   return NULL;
 }
 
-int
+void
 check_bom()
 {
   int fd;
@@ -41,12 +41,18 @@ check_bom()
 
   if (program_state->in_file == NULL) {
     error("%s\n", "In file not specified");
+    if(program_state != NULL) {
+      free(program_state);
+    }
     exit(EXIT_FAILURE);
   }
   fd = Open(program_state->in_file, O_RDONLY);
 
   if ((bytes_read = read_to_bigendian(fd, &bom, 3)) < 3) {
     fprintf(stderr, "%s\n", "File contains invalid BOM or is empty beyond BOM");
+    if(program_state != NULL) {
+      free(program_state);
+    }
     exit(EXIT_FAILURE);
   }
   debug("BOM: %x", bom);
@@ -56,7 +62,6 @@ check_bom()
     program_state->encoding_from = UTF8;
     program_state->bom_length = 3;
     close(fd);
-    return 0;
   }
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
   reverse_bytes(&bom, 2);
@@ -76,10 +81,12 @@ check_bom()
   else
   {
     fprintf(stderr, "%s\n", "Unrecognized BOM");
+    if(program_state != NULL) {
+      free(program_state);
+    }
     exit(EXIT_FAILURE);
   }
   close(fd);
-  return 0;
 }
 
 int
@@ -90,6 +97,9 @@ transcribe(int infile, int outfile)
   struct stat infile_stat;
   if (fstat(infile, &infile_stat) < 0) {
     perror("Could not stat infile");
+    if(program_state != NULL) {
+      free(program_state);
+    }
     exit(EXIT_FAILURE);
   }
   bom = program_state->encoding_to;
