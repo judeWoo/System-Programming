@@ -14,13 +14,12 @@ main(int argc, char *argv[])
   check_bom();
   print_state();
   in_flags = O_RDONLY;
-  out_flags = O_WRONLY | O_CREAT | O_TRUNC;
+  out_flags = O_WRONLY | O_CREAT;
   infile = Open(program_state->in_file, in_flags);
   outfile = Open(program_state->out_file, out_flags);
 
   if (fstat(infile, &infile_stat) < 0 || fstat(outfile, &outfile_stat) < 0)
   {
-    perror("Could not stat infile");
     if(program_state != NULL) {
       free(program_state);
     }
@@ -28,7 +27,6 @@ main(int argc, char *argv[])
   }
   if (infile_stat.st_ino == outfile_stat.st_ino)
   {
-    perror("In & Out are symlinked");
     if(program_state != NULL) {
       free(program_state);
     }
@@ -36,7 +34,6 @@ main(int argc, char *argv[])
   }
   if ((lseek(infile, program_state->bom_length, SEEK_SET) < 0))
   {
-    perror("In & Out are symlinked");
     if(program_state != NULL) {
       free(program_state);
     }
