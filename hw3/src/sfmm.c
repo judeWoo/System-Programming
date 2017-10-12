@@ -3,7 +3,10 @@
  * Do not submit your assignment with a main function in this file.
  * If you submit with a main function in this file, you will get a zero.
  */
+#include "sfmm.h"
 #include "mysfmm.h"
+#include <stdio.h>
+#include <stdlib.h>
 /**
  * You should store the heads of your free lists in these variables.
  * Doing so will make it accessible via the extern statement in sfmm.h
@@ -167,6 +170,7 @@ void *sf_place(size_t size, size_t asize){
             debug("(Outer Request %d) The free block header is at %p\n", sf_sbrk_counter, bp);
             /* Append */
             bp = sf_append(PAGE_SZ + free, bp);
+
             /* Check size */
             if(asize <= (PAGE_SZ + free))
             {
@@ -193,8 +197,8 @@ void *sf_place(size_t size, size_t asize){
 void *sf_search(size_t size, size_t asize, int list_index){
 
     sf_free_header *tmp = NULL; /* Searcher */
-    char *bp = NULL;
-    sf_footer *ftrp = NULL;
+    char *bp = NULL; /* Block pointer */
+    sf_footer *ftrp = NULL; /* Footer */
 
     /* First-fit search */
     debug("(Search) The free block list is at %d\n", list_index);
@@ -212,6 +216,7 @@ void *sf_search(size_t size, size_t asize, int list_index){
             tmp->header.allocated = 1;
             tmp->header.padded = 0;
             tmp->header.two_zeroes = 0;
+            tmp->header.unused = 0;
 
             /* Put Footer to selected free block */
             ftrp = (sf_footer *) ((char *) tmp + asize - 8);
@@ -256,9 +261,9 @@ void *sf_search(size_t size, size_t asize, int list_index){
 
 void *sf_append(uint64_t block_size, char *bp) {
 
+    int s; /* Free list chooser */
     sf_free_header *tmp; /* Free list indexer */
     sf_footer *ftrp; /* Footer */
-    int s; /* Free list chooser */
 
     /* Determine the list */
     s = sf_list_index(block_size);
@@ -272,6 +277,7 @@ void *sf_append(uint64_t block_size, char *bp) {
         seg_free_list[s].head->header.padded = 0;
         seg_free_list[s].head->header.two_zeroes = 0;
         seg_free_list[s].head->header.block_size = block_size / 16;
+        seg_free_list[s].head->header.unused = 0;
         seg_free_list[s].head->prev = NULL;
         seg_free_list[s].head->next = NULL;
         ftrp = (sf_footer *) (bp + block_size - 8);
@@ -299,6 +305,7 @@ void *sf_append(uint64_t block_size, char *bp) {
         seg_free_list[s].head->header.padded = 0;
         seg_free_list[s].head->header.two_zeroes = 0;
         seg_free_list[s].head->header.block_size = block_size / 16;
+        seg_free_list[s].head->header.unused = 0;
         ftrp = (sf_footer *) (bp + block_size - 8);
         (*ftrp).allocated = 0;
         (*ftrp).padded = 0;
@@ -340,7 +347,7 @@ void sf_remove(sf_free_header *tmp, int list_index) {
 
 int sf_list_index(uint64_t block_size) {
 
-    int sort[4];
+    int sort[4]; /* Sorter */
 
     /* Ascending sort */
     sort[0] = seg_free_list[3].min;
@@ -403,25 +410,70 @@ void ascending_sort(int number[], int n) {
 }
 
 void *sf_realloc(void *ptr, size_t size) {
+
+    uint64_t selected = 0; /* ptr's block size */
+    sf_header *hdrp = NULL; /* Header */
+    sf_footer *ftrp = NULL; /* Footer */
+
+    /* Check null & address of ptr */
+    if ((ptr == NULL) || (ptr < (void *) 16))
+    {
+        abort();
+    }
+
+    /* Init */
+    hdrp = (sf_header *) ((char *) ptr - 8);
+    ftrp = (sf_footer *) ((char *) ptr + (hdrp->block_size * 16) - 16);
+    selected = hdrp->block_size * 16;
+
+
+
     return NULL;
 }
 
 void sf_free(void *ptr) {
 
-    sf_header *hdrp = NULL;
-    sf_footer *ftrp = NULL;
+    uint64_t selected = 0; /* ptr's block size */
+    sf_header *hdrp = NULL; /* Header */
+    sf_footer *ftrp = NULL; /* Footer */
 
-    /* Check null */
-    if ((ptr == NULL))
+    /* Check null & address of ptr */
+    if ((ptr == NULL) || (ptr < (void *) 16))
     {
         abort();
     }
 
-    /* Init pointers */
+    /* Init */
     hdrp = (sf_header *) ((char *) ptr - 8);
     ftrp = (sf_footer *) ((char *) ptr + (hdrp->block_size * 16) - 16);
+    selected = hdrp->block_size * 16;
 
     /* Check invalid */
+    sf_invalid(hdrp, ftrp);
+
+    /* Coalesce next block + update header to next block */
+    if ((hdrp = (sf_header *) (ptr - 8 + (hdrp->block_size * 16)))->allocated == 0)
+    {
+        /* Remove from list */
+        sf_remove((sf_free_header *) hdrp, sf_list_index(hdrp->block_size * 16));
+
+        /* Append */
+        sf_append((hdrp->block_size * 16) + selected, (char *) hdrp);
+        goto end;
+    }
+
+    /* Revert header */
+    hdrp = (sf_header *) ((char *) ptr - 8);
+
+    /* Append */
+    sf_append(selected, (char *) hdrp);
+
+    end:
+    return;
+}
+
+void sf_invalid(sf_header *hdrp, sf_footer *ftrp) {
+
     if (hdrp < (sf_header *) get_heap_start())
     {
         abort(); /* Header before heap */
@@ -446,6 +498,10 @@ void sf_free(void *ptr) {
     {
         abort(); /* Different block size */
     }
+    if ((hdrp->block_size * 16 < sort[0]) || (hdrp->block_size * 16 > PAGE_SZ * 4) )
+    {
+        abort(); /* Too small or Too big block size */
+    }
     if (hdrp->two_zeroes != ftrp->two_zeroes)
     {
         abort(); /* Different two zeroes */
@@ -453,6 +509,14 @@ void sf_free(void *ptr) {
     if (hdrp->two_zeroes != 0)
     {
         abort(); /* Two zeroes not zeroes */
+    }
+    if (hdrp->unused != 0)
+    {
+        abort(); /* Unused bits not zero */
+    }
+    if ((ftrp->requested_size <= 0) || (ftrp->requested_size > PAGE_SZ * 4 - 16))
+    {
+        abort();
     }
     if (hdrp->padded == 1)
     {
@@ -467,13 +531,6 @@ void sf_free(void *ptr) {
         {
             abort(); /* Does not make sense */
         }
-    }
-
-    /* Coalesce next block */
-    if ((ftrp = (sf_footer *) (ptr - 8))->allocated == 0)
-    {
-        ptr = (ptr - (16 * (ftrp->block_size)));
-        // hsize = hsize + (16 * (ftrp->block_size));
     }
 
     return;

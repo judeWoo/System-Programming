@@ -6,15 +6,28 @@ int main(int argc, char const *argv[]) {
 
     sf_mem_init();
 
-    for (int i = 0; i < (PAGE_SZ * 4 / 32) - 1; ++i)
-    {
-        double* ptr = sf_malloc(4.2);
-        *ptr = 320320320e-10; // Ae-N: A * 10^(-N)
+    // for (int i = 0; i < (PAGE_SZ * 4 / 32) - 1; ++i)
+    // {
+    //     double* ptr = sf_malloc(4.2);
+    //     *ptr = 320320320e-10; // Ae-N: A * 10^(-N)
 
-    }
+    // }
+
+    int *ptr1 = sf_malloc(243);
+    int *ptr2 = sf_malloc(sizeof(double));
+    int *ptr3 = sf_malloc(sizeof(double)*2000);
 
     sf_snapshot();
-    // sf_free(ptr);
+    sf_varprint(ptr1);
+    sf_varprint(ptr2);
+    sf_varprint(ptr3);
+
+    printf("NOW LET'S FREE\n");
+    sf_free(ptr1);
+    sf_free(ptr2);
+    sf_free(ptr3);
+
+    sf_snapshot();
 
     sf_mem_fini();
 
