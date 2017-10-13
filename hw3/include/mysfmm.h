@@ -5,11 +5,12 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define WSIZE 2
 #define MEMROW 8
 
-#define SF_HEADER_SIZE_BYTE 8
+#define MINIMUM 32
 
 void *sf_malloc_helper(size_t size, size_t asize, int list_index);
 void *sf_place(size_t size, size_t asize);
