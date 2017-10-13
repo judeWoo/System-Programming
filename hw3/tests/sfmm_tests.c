@@ -185,3 +185,46 @@ Test(sf_memsuite_student, realloc_smaller_block_free_block, .init = sf_mem_init,
 //DO NOT DELETE THESE COMMENTS
 //############################################
 
+Test(sf_memsuite_student, malloc_to_limit, .init = sf_mem_init, .fini = sf_mem_fini) {
+
+	for (int i = 0; i < (PAGE_SZ * 4 / 32) - 1; ++i)
+	{
+		void *x = sf_malloc(1);
+		x = x;
+	}
+
+	for (int i = 0; i < 4; ++i)
+	{
+		cr_assert_not_null(seg_free_list[i].head, "No block is expected in free lists!");
+		break;
+	}
+}
+
+Test(sf_memsuite_student, invalid_pointer_free_a, .init = sf_mem_init, .fini = sf_mem_fini, .signal = SIGABRT) {
+	void *x = (void *) 0xF;
+	sf_free(x);
+}
+
+Test(sf_memsuite_student, invalid_pointer_realloc_a, .init = sf_mem_init, .fini = sf_mem_fini, .signal = SIGABRT) {
+	void *x = (void *) 0xF;
+	void *y = sf_realloc(x, sizeof(int));
+	y = y;
+}
+
+Test(sf_memsuite_student, malloc_free_realloc_mix1, .init = sf_mem_init, .fini = sf_mem_fini, .signal = SIGABRT) {
+	void *x = sf_malloc(sizeof(double) * 8);
+	void *y = sf_realloc(x, sizeof(int));
+
+	sf_free(y);
+	sf_free(x);
+}
+
+Test(sf_memsuite_student, malloc_free_realloc_mix2, .init = sf_mem_init, .fini = sf_mem_fini, .signal = SIGABRT) {
+	void *x = sf_malloc(sizeof(double) * 8);
+	void *y = sf_realloc(x, sizeof(int));
+
+	sf_free(y);
+
+	void *z = sf_realloc(x, sizeof(double));
+	sf_free(z);
+}

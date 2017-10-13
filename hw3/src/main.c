@@ -1,17 +1,22 @@
 #include <stdio.h>
 #include "sfmm.h"
+#include "mysfmm.h"
 
 int main(int argc, char const *argv[]) {
 
     sf_mem_init();
 
-    double* ptr = sf_malloc(sizeof(double));
+    void *x = sf_malloc(sizeof(double) * 8);
+    void *y = sf_realloc(x, sizeof(int));
 
-    *ptr = 320320320e-320;
+    sf_free(y);
 
-    printf("%f\n", *ptr);
+    void *z = sf_realloc(x, sizeof(double));
+    sf_free(z);
 
-    sf_free(ptr);
+    sf_snapshot();
+    // sf_varprint(x);
+    // sf_varprint(y);
 
     sf_mem_fini();
 
