@@ -185,102 +185,46 @@ Test(sf_memsuite_student, realloc_smaller_block_free_block, .init = sf_mem_init,
 //DO NOT DELETE THESE COMMENTS
 //############################################
 
-Test(sf_memsuite_student, realloc_smaller_block_free_block2, .init = sf_mem_init, .fini = sf_mem_fini) {
-	void *x = sf_malloc(sizeof(double) * 8);
-	void *y = sf_realloc(x, sizeof(int));
+Test(sf_memsuite_student, malloc_to_limit, .init = sf_mem_init, .fini = sf_mem_fini) {
 
-	cr_assert_not_null(y, "y is NULL!");
+	for (int i = 0; i < (PAGE_SZ * 4 / 32) - 1; ++i)
+	{
+		void *x = sf_malloc(1);
+		x = x;
+	}
 
-	sf_header *header = (sf_header*)((char*)y - 8);
-	cr_assert(header->block_size << 4 == 32, "Realloc'ed block size not what was expected!");
-	cr_assert(header->allocated == 1, "Allocated bit is not set!");
-
-
-	// After realloc'ing x, we can return a block of size 48 to the freelist.
-	// This block will coalesce with the block of size 4016.
-	free_list *fl = &seg_free_list[find_list_index_from_size(4064)];
-
-	cr_assert_not_null(fl->head, "No block in expected free list!");
-	cr_assert(fl->head->header.allocated == 0, "Allocated bit is set!");
-	cr_assert(fl->head->header.block_size << 4 == 4064, "Free block size not what was expected!");
+	for (int i = 0; i < 4; ++i)
+	{
+		cr_assert_not_null(seg_free_list[i].head, "No block is expected in free lists!");
+		break;
+	}
 }
 
-Test(sf_memsuite_student, realloc_smaller_block_free_block3, .init = sf_mem_init, .fini = sf_mem_fini) {
-	void *x = sf_malloc(sizeof(double) * 8);
-	void *y = sf_realloc(x, sizeof(int));
-
-	cr_assert_not_null(y, "y is NULL!");
-
-	sf_header *header = (sf_header*)((char*)y - 8);
-	cr_assert(header->block_size << 4 == 32, "Realloc'ed block size not what was expected!");
-	cr_assert(header->allocated == 1, "Allocated bit is not set!");
-
-
-	// After realloc'ing x, we can return a block of size 48 to the freelist.
-	// This block will coalesce with the block of size 4016.
-	free_list *fl = &seg_free_list[find_list_index_from_size(4064)];
-
-	cr_assert_not_null(fl->head, "No block in expected free list!");
-	cr_assert(fl->head->header.allocated == 0, "Allocated bit is set!");
-	cr_assert(fl->head->header.block_size << 4 == 4064, "Free block size not what was expected!");
+Test(sf_memsuite_student, invalid_pointer_free_a, .init = sf_mem_init, .fini = sf_mem_fini, .signal = SIGABRT) {
+	void *x = (void *) 0xF;
+	sf_free(x);
 }
 
-Test(sf_memsuite_student, realloc_smaller_block_free_block4, .init = sf_mem_init, .fini = sf_mem_fini) {
-	void *x = sf_malloc(sizeof(double) * 8);
+Test(sf_memsuite_student, invalid_pointer_realloc_a, .init = sf_mem_init, .fini = sf_mem_fini, .signal = SIGABRT) {
+	void *x = (void *) 0xF;
 	void *y = sf_realloc(x, sizeof(int));
-
-	cr_assert_not_null(y, "y is NULL!");
-
-	sf_header *header = (sf_header*)((char*)y - 8);
-	cr_assert(header->block_size << 4 == 32, "Realloc'ed block size not what was expected!");
-	cr_assert(header->allocated == 1, "Allocated bit is not set!");
-
-
-	// After realloc'ing x, we can return a block of size 48 to the freelist.
-	// This block will coalesce with the block of size 4016.
-	free_list *fl = &seg_free_list[find_list_index_from_size(4064)];
-
-	cr_assert_not_null(fl->head, "No block in expected free list!");
-	cr_assert(fl->head->header.allocated == 0, "Allocated bit is set!");
-	cr_assert(fl->head->header.block_size << 4 == 4064, "Free block size not what was expected!");
+	y = y;
 }
 
-Test(sf_memsuite_student, realloc_smaller_block_free_block5, .init = sf_mem_init, .fini = sf_mem_fini) {
+Test(sf_memsuite_student, malloc_free_realloc_mix1, .init = sf_mem_init, .fini = sf_mem_fini, .signal = SIGABRT) {
 	void *x = sf_malloc(sizeof(double) * 8);
 	void *y = sf_realloc(x, sizeof(int));
 
-	cr_assert_not_null(y, "y is NULL!");
-
-	sf_header *header = (sf_header*)((char*)y - 8);
-	cr_assert(header->block_size << 4 == 32, "Realloc'ed block size not what was expected!");
-	cr_assert(header->allocated == 1, "Allocated bit is not set!");
-
-
-	// After realloc'ing x, we can return a block of size 48 to the freelist.
-	// This block will coalesce with the block of size 4016.
-	free_list *fl = &seg_free_list[find_list_index_from_size(4064)];
-
-	cr_assert_not_null(fl->head, "No block in expected free list!");
-	cr_assert(fl->head->header.allocated == 0, "Allocated bit is set!");
-	cr_assert(fl->head->header.block_size << 4 == 4064, "Free block size not what was expected!");
+	sf_free(y);
+	sf_free(x);
 }
 
-Test(sf_memsuite_student, realloc_smaller_block_free_block6, .init = sf_mem_init, .fini = sf_mem_fini) {
+Test(sf_memsuite_student, malloc_free_realloc_mix2, .init = sf_mem_init, .fini = sf_mem_fini, .signal = SIGABRT) {
 	void *x = sf_malloc(sizeof(double) * 8);
 	void *y = sf_realloc(x, sizeof(int));
 
-	cr_assert_not_null(y, "y is NULL!");
+	sf_free(y);
 
-	sf_header *header = (sf_header*)((char*)y - 8);
-	cr_assert(header->block_size << 4 == 32, "Realloc'ed block size not what was expected!");
-	cr_assert(header->allocated == 1, "Allocated bit is not set!");
-
-
-	// After realloc'ing x, we can return a block of size 48 to the freelist.
-	// This block will coalesce with the block of size 4016.
-	free_list *fl = &seg_free_list[find_list_index_from_size(4064)];
-
-	cr_assert_not_null(fl->head, "No block in expected free list!");
-	cr_assert(fl->head->header.allocated == 0, "Allocated bit is set!");
-	cr_assert(fl->head->header.block_size << 4 == 4064, "Free block size not what was expected!");
+	void *z = sf_realloc(x, sizeof(double));
+	sf_free(z);
 }
