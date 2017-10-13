@@ -7,10 +7,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define WSIZE 2
-#define MEMROW 8
-
 #define MINIMUM 32
+
+#define MAX(x,y) ((x > y) ? (x) : (y))
+#define MIN(x,y) ((x < y) ? (x) : (y))
+#define ABS(x,y) (MAX(x,y) - MIN(x,y))
 
 void *sf_malloc_helper(size_t size, size_t asize, int list_index);
 void *sf_place(size_t size, size_t asize);
