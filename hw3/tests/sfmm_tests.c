@@ -228,3 +228,13 @@ Test(sf_memsuite_student, malloc_free_realloc_mix2, .init = sf_mem_init, .fini =
 	void *z = sf_realloc(x, sizeof(double));
 	sf_free(z);
 }
+
+Test(sf_memsuite_student, backward_coalesce_a, .init = sf_mem_init, .fini = sf_mem_fini, .signal = SIGABRT) {
+	void *x = sf_malloc(sizeof(double) * 8);
+	void *y = sf_realloc(x, sizeof(int));
+
+	sf_free(y);
+
+	void *z = sf_realloc(x, sizeof(double));
+	sf_free(z);
+}
