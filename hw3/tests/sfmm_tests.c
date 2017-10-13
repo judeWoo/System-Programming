@@ -224,17 +224,20 @@ Test(sf_memsuite_student, malloc_free_realloc_mix2, .init = sf_mem_init, .fini =
 	void *y = sf_realloc(x, sizeof(int));
 
 	sf_free(y);
-
-	void *z = sf_realloc(x, sizeof(double));
-	sf_free(z);
+	sf_realloc(x, sizeof(double));
 }
 
-Test(sf_memsuite_student, backward_coalesce_a, .init = sf_mem_init, .fini = sf_mem_fini, .signal = SIGABRT) {
+Test(sf_memsuite_student, malloc_free_realloc_mix3, .init = sf_mem_init, .fini = sf_mem_fini) {
 	void *x = sf_malloc(sizeof(double) * 8);
-	void *y = sf_realloc(x, sizeof(int));
-
+	sf_free(x);
+	/* Backward coalesce */
+	void *y = sf_malloc(sizeof(double));
 	sf_free(y);
 
-	void *z = sf_realloc(x, sizeof(double));
-	sf_free(z);
+	free_list *fl = &seg_free_list[find_list_index_from_size(4096)];
+
+	cr_assert_not_null(fl->head, "No block in expected free list!");
+	cr_assert(fl->head->header.allocated == 0, "Allocated bit is set!");
+	cr_assert(fl->head->header.block_size << 4 == 4096, "Free block size not what was expected!");
+
 }
