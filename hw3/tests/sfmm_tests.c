@@ -3,7 +3,6 @@
 #include <signal.h>
 #include "sfmm.h"
 
-
 int find_list_index_from_size(int sz) {
 	if (sz >= LIST_1_MIN && sz <= LIST_1_MAX) return 0;
 	else if (sz >= LIST_2_MIN && sz <= LIST_2_MAX) return 1;
@@ -193,11 +192,27 @@ Test(sf_memsuite_student, malloc_to_limit, .init = sf_mem_init, .fini = sf_mem_f
 		x = x;
 	}
 
-	for (int i = 0; i < 4; ++i)
+	cr_assert_not_null(seg_free_list[find_list_index_from_size(32)].head, "No block in expected free lists!");
+
+}
+
+Test(sf_memsuite_student, realloc_to_limit, .init = sf_mem_init, .fini = sf_mem_fini) {
+
+	void *x = sf_malloc(PAGE_SZ * 4 - 16);
+	for (int i = 0; i < PAGE_SZ * 4 / 32 - 1; ++i)
 	{
-		cr_assert_not_null(seg_free_list[i].head, "No block is expected in free lists!");
-		break;
+		x = sf_realloc(x, (PAGE_SZ * 4) - (32 * (i + 1)));
 	}
+
+	cr_assert_not_null(seg_free_list[find_list_index_from_size(PAGE_SZ * 4 - 0x30)].head, "No block in expected free lists!");
+}
+
+Test(sf_memsuite_student, realloc_to_Over_four_pages, .init = sf_mem_init, .fini = sf_mem_fini) {
+	void *x = sf_malloc(sizeof(double) * 8);
+	void *y = sf_realloc(x, PAGE_SZ << 4);
+
+	cr_assert_null(y, "y is NOT NULL!");
+
 }
 
 Test(sf_memsuite_student, invalid_pointer_free_a, .init = sf_mem_init, .fini = sf_mem_fini, .signal = SIGABRT) {
@@ -228,10 +243,10 @@ Test(sf_memsuite_student, malloc_free_realloc_mix2, .init = sf_mem_init, .fini =
 }
 
 Test(sf_memsuite_student, malloc_free_realloc_mix3, .init = sf_mem_init, .fini = sf_mem_fini) {
-	void *x = sf_malloc(sizeof(double) * 8);
+	void *x = sf_malloc(sizeof(double));
 	sf_free(x);
 	/* Backward coalesce */
-	void *y = sf_malloc(sizeof(double));
+	void *y = sf_malloc(sizeof(double) * 8);
 	sf_free(y);
 
 	free_list *fl = &seg_free_list[find_list_index_from_size(4096)];
@@ -239,5 +254,18 @@ Test(sf_memsuite_student, malloc_free_realloc_mix3, .init = sf_mem_init, .fini =
 	cr_assert_not_null(fl->head, "No block in expected free list!");
 	cr_assert(fl->head->header.allocated == 0, "Allocated bit is set!");
 	cr_assert(fl->head->header.block_size << 4 == 4096, "Free block size not what was expected!");
+}
 
+Test(sf_memsuite_student, malloc_free_realloc_mix4, .init = sf_mem_init, .fini = sf_mem_fini) {
+	void *x = sf_malloc(sizeof(double) * 8);
+	void *y = sf_malloc(sizeof(double));
+	sf_free(y);
+	/* Forward coalesce */
+	sf_free(x);
+
+	free_list *fl = &seg_free_list[find_list_index_from_size(4096)];
+
+	cr_assert_not_null(fl->head, "No block in expected free list!");
+	cr_assert(fl->head->header.allocated == 0, "Allocated bit is set!");
+	cr_assert(fl->head->header.block_size << 4 == 4096, "Free block size not what was expected!");
 }

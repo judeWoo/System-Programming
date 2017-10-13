@@ -446,6 +446,7 @@ void *sf_realloc(void *ptr, size_t size) {
     /* Realloc to larger size */
     if (size > (hdrp->block_size << 4))
     {
+        large:
         if ((bp = sf_malloc(size)) != NULL)
         {
             memcpy(bp, ptr, ((hdrp->block_size << 4) - 16)); /* GDB */
@@ -541,6 +542,12 @@ void *sf_realloc(void *ptr, size_t size) {
         if (size != (ftrp->requested_size))
         {
             ftrp->requested_size = size;
+
+            /* Realloc to larger size */
+            if (size == (hdrp->block_size << 4))
+            {
+                goto large;
+            }
         }
 
         return (void *) ptr;
@@ -651,9 +658,14 @@ void sf_invalid(sf_header *hdrp, sf_footer *ftrp) {
     }
     if (hdrp->padded == 0)
     {
-        if ((ftrp->requested_size + 16) != (hdrp->block_size << 4))
+        debug("The requested size is %d", ftrp->requested_size);
+        debug("The block size is %d", hdrp->block_size << 4);
+        if (((ftrp->requested_size + 16) != (hdrp->block_size << 4)))
         {
-            abort(); /* Does not make sense */
+            if (((ftrp->requested_size) != (hdrp->block_size << 4)))
+            {
+                abort(); /* Does not make sense */
+            }
         }
     }
 
