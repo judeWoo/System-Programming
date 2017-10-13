@@ -217,7 +217,6 @@ void *sf_search(size_t size, size_t asize, int list_index){
             tmp->header.allocated = 1;
             tmp->header.padded = 0;
             tmp->header.two_zeroes = 0;
-            tmp->header.unused = 0;
 
             /* Put Footer to selected free block */
             ftrp = (sf_footer *) ((char *) tmp + asize - 8);
@@ -278,7 +277,6 @@ void *sf_append(uint64_t block_size, char *bp) {
         seg_free_list[s].head->header.padded = 0;
         seg_free_list[s].head->header.two_zeroes = 0;
         seg_free_list[s].head->header.block_size = block_size / 16;
-        seg_free_list[s].head->header.unused = 0;
         seg_free_list[s].head->prev = NULL;
         seg_free_list[s].head->next = NULL;
         ftrp = (sf_footer *) (bp + block_size - 8);
@@ -306,7 +304,6 @@ void *sf_append(uint64_t block_size, char *bp) {
         seg_free_list[s].head->header.padded = 0;
         seg_free_list[s].head->header.two_zeroes = 0;
         seg_free_list[s].head->header.block_size = block_size / 16;
-        seg_free_list[s].head->header.unused = 0;
         ftrp = (sf_footer *) (bp + block_size - 8);
         (*ftrp).allocated = 0;
         (*ftrp).padded = 0;
@@ -509,11 +506,26 @@ void *sf_realloc(void *ptr, size_t size) {
             }
 
             /* Update block pointer for remainder */
-            bp = ((char *)ftrp + 8);
+            bp = (char *) ftrp + 8;
 
-            /* Free */
-            sf_append(selected - (hdrp->block_size << 4), bp);
+            /* Free with coalesce */
+            if ((hdrp = (sf_header *) (bp + selected - asize))->allocated == 0)
+            {
+                /* Remove from list */
+                sf_remove((sf_free_header *) hdrp, sf_list_index(hdrp->block_size << 4));
 
+                /* Append */
+                sf_append((hdrp->block_size << 4) + selected - asize, (char *) bp);
+                goto end;
+            }
+
+            /* Revert header */
+            hdrp = (sf_header *) bp;
+
+            /* Free without coalesce */
+            sf_append(selected - asize, (char *) hdrp);
+
+            end:
             return (void *) ptr;
         }
     }
@@ -553,6 +565,12 @@ void sf_free(void *ptr) {
     /* Check invalid */
     sf_invalid(hdrp, ftrp);
 
+    /* Free check */
+    if (hdrp == (sf_header *) seg_free_list[sf_list_index(hdrp->block_size << 4)].head)
+    {
+        abort();
+    }
+
     /* Coalesce next block + update header to next block */
     if ((hdrp = (sf_header *) (ptr - 8 + (hdrp->block_size << 4)))->allocated == 0)
     {
@@ -560,7 +578,7 @@ void sf_free(void *ptr) {
         sf_remove((sf_free_header *) hdrp, sf_list_index(hdrp->block_size << 4));
 
         /* Append */
-        sf_append((hdrp->block_size << 4) + selected, (char *) hdrp);
+        sf_append((hdrp->block_size << 4) + selected, (char *) ptr - 8);
         goto end;
     }
 
@@ -611,10 +629,6 @@ void sf_invalid(sf_header *hdrp, sf_footer *ftrp) {
     if (hdrp->two_zeroes != 0)
     {
         abort(); /* Two zeroes not zeroes */
-    }
-    if (hdrp->unused != 0)
-    {
-        abort(); /* Unused bits not zero */
     }
     if ((ftrp->requested_size <= 0) || (ftrp->requested_size > PAGE_SZ * 4 - 16))
     {
