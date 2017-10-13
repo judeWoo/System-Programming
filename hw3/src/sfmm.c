@@ -508,11 +508,12 @@ void *sf_realloc(void *ptr, size_t size) {
             /* Update block pointer for remainder */
             bp = (char *) ftrp + 8;
 
-            /* Update Header */
+            /* Update header & footer */
             hdrp = (sf_header *) (bp + selected - asize);
+            ftrp = (sf_footer *) ((char *) hdrp + (hdrp->block_size << 4) - 8);
 
             /* Free with coalesce */
-            if ((hdrp->allocated == 0) && (hdrp < (sf_header *) get_heap_end()))
+            if ((hdrp->allocated == 0) && (ftrp <= (sf_footer *) get_heap_end()))
             {
                 /* Remove from list */
                 sf_remove((sf_free_header *) hdrp, sf_list_index(hdrp->block_size << 4));
@@ -574,11 +575,12 @@ void sf_free(void *ptr) {
         abort();
     }
 
-    /* Update Header */
+    /* Update header & footer */
     hdrp = (sf_header *) (ptr - 8 + (hdrp->block_size << 4));
+    ftrp = (sf_footer *) ((char *) hdrp + (hdrp->block_size << 4) - 8);
 
     /* Coalesce next block + update header to next block */
-    if ((hdrp->allocated == 0) && (hdrp < (sf_header *) get_heap_end()))
+    if ((hdrp->allocated == 0) && (ftrp <= (sf_footer *) get_heap_end()))
     {
         /* Remove from list */
         sf_remove((sf_free_header *) hdrp, sf_list_index(hdrp->block_size << 4));
