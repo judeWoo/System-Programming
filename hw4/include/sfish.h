@@ -14,7 +14,7 @@ void prepend(char* s, const char* t);
 // void my_system(char *path, char *input)
 char *init(char *home, char *cwd);
 void parse(char *home, char *cwd, char *input, int inputc, char **inputv);
-char **tokenize(char *input, int *inputc);
+char **tokenize(char *inputcpy, int *inputc);
 void execute(char *home, char *cwd, char *input, int inputc, char **inputv);
 
 

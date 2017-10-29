@@ -14,6 +14,7 @@ int main(int argc, char *argv[], char *envp[]) {
     char *cwd = NULL; //current working dir
     char *input = NULL; //input
     char **inputv = NULL; //tokenized input
+    char *inputcpy = NULL; //copied input
     char *home = NULL; //home dir
 
     if (!isatty(STDIN_FILENO)) //if from file
@@ -61,8 +62,17 @@ int main(int argc, char *argv[], char *envp[]) {
             continue;
         }
 
+        //copy input
+        inputcpy = malloc(sizeof(char) * strlen(input));
+        if (inputcpy == NULL)
+        {
+            perror("malloc failed");
+            exit(EXIT_FAILURE);
+        }
+        strcpy(inputcpy, input);
+
         //tokenize
-        inputv = tokenize(input, &inputc);
+        inputv = tokenize(inputcpy, &inputc);
 
         //execute
         // execute();
@@ -71,15 +81,10 @@ int main(int argc, char *argv[], char *envp[]) {
         parse(home, cwd, input, inputc, inputv);
 
         //free
-        if (cwd != NULL)
-        {
-            free(cwd);
-        }
-
-        if (input != NULL)
-        {
-            rl_free(input);
-        }
+        free(cwd);
+        free(inputv);
+        free(inputcpy);
+        rl_free(input);
 
     } while (1);
 
@@ -89,7 +94,7 @@ int main(int argc, char *argv[], char *envp[]) {
 void execute(char *home, char *cwd, char *input, int inputc, char **inputv)
 {
     //Search file using *inputv
-    if ()
+    if (1)
     {
         /* code */
     }
@@ -97,28 +102,11 @@ void execute(char *home, char *cwd, char *input, int inputc, char **inputv)
     return;
 }
 
-char **tokenize(char *input, int *inputc)
+char **tokenize(char *inputcpy, int *inputc)
 {
     int i = 0; //counter for string
     char *temp_input = NULL; //temp input
-    char *inputcpy = NULL; //copied input
     char **inputv = NULL; //tokenzied input
-
-    //copy input
-    inputcpy = malloc(sizeof(char) * strlen(input));
-    if (inputcpy == NULL)
-    {
-        perror("malloc failed");
-        exit(EXIT_FAILURE);
-    }
-    strcpy(inputcpy, input);
-
-    temp_input = malloc(sizeof(char) * strlen(inputcpy)); //allocate space to hold input temporarily
-    if (temp_input == NULL)
-    {
-        perror("malloc failed");
-        exit(EXIT_FAILURE);
-    }
 
     temp_input = strtok(inputcpy, " \r\n\t\v\f"); //tokenize input
 
@@ -156,21 +144,13 @@ char **tokenize(char *input, int *inputc)
             }
         }
 
-        inputv[i - 1] = malloc(sizeof(char *));
-        if (inputv[i - 1] == NULL)
-        {
-            perror("malloc failed");
-            exit(EXIT_FAILURE);
-        }
         inputv[i - 1] = temp_input;
 
     } while (temp_input != NULL);
 
     *inputc = i;
 
-    free(temp_input);
-
-    return inputv; // TODO - free?
+    return inputv;
 }
 
 void parse(char *home, char *cwd, char *input, int inputc, char **inputv)
