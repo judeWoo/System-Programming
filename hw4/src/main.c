@@ -5,22 +5,29 @@
 #include <stdbool.h>
 #include <readline/readline.h>
 #include <errno.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
 
 #include "sfish.h"
 #include "debug.h"
+
+#define MAX_COMMAND 1024
+#define MAX_TOKEN MAX_COMMAND
+#define MAX_INPUT MAX_COMMAND
+#define MAX_OUTPUT MAX_COMMAND
+
+char *inputv[MAX_TOKEN]; //tokenized input
 
 int main(int argc, char *argv[], char *envp[]) {
     int inputc; //tokenized input size
     char *cwd = NULL; //current working dir
     char *input = NULL; //input
-    char **inputv = NULL; //tokenized input
-    char *inputcpy = NULL; //copied input
     char *home = NULL; //home dir
 
     if (!isatty(STDIN_FILENO)) //if from file
     {
         // If your shell is reading from a piped file
-        // Don't have readline write anything to that file.
+        // Don't have readline then write anything to that file.
         // Such as the prompt or "user input"
         if ((rl_outstream = fopen("/dev/null", "w")) == NULL){ //making rl_outstream points at nothing
             perror("Failed trying to open DEVNULL");
@@ -35,16 +42,19 @@ int main(int argc, char *argv[], char *envp[]) {
         exit(EXIT_FAILURE);
     }
 
+    // init OLDPWD
+    setenv("OLDPWD", "", 1);
+
     do
     {
         //init inputc
         inputc = 0;
-
         //init cwd
-        cwd = init(home, cwd);
-
+        cwd = init_cwd(home, cwd);
         //init input
         input = readline(cwd);
+        //init to parse
+        free(cwd);
 
         write(1, "\e[s", strlen("\e[s")); //TODO
         write(1, "\e[20;10H", strlen("\e[20;10H"));
@@ -54,36 +64,19 @@ int main(int argc, char *argv[], char *envp[]) {
         // If EOF is read (aka ^D) readline returns NULL
         if (input == NULL)
         {
-            if (cwd != NULL)
-            {
-                free(cwd);
-            }
-
+            free(cwd);
             continue;
         }
 
-        //copy input
-        inputcpy = malloc(sizeof(char) * strlen(input));
-        if (inputcpy == NULL)
-        {
-            perror("malloc failed");
-            exit(EXIT_FAILURE);
-        }
-        strcpy(inputcpy, input);
+        //check ||
 
         //tokenize
-        inputv = tokenize(inputcpy, &inputc);
-
-        //execute
-        // execute();
+        tokenized(input, &inputc);
 
         //parse
-        parse(home, cwd, input, inputc, inputv);
+        // parse(home, cwd, input, inputc, inputv);
 
         //free
-        free(cwd);
-        free(inputv);
-        free(inputcpy);
         rl_free(input);
 
     } while (1);
@@ -91,77 +84,217 @@ int main(int argc, char *argv[], char *envp[]) {
     return EXIT_SUCCESS;
 }
 
-void execute(char *home, char *cwd, char *input, int inputc, char **inputv)
+void tokenized(char *input, int *inputc)
 {
-    //Search file using *inputv
-    if (1)
+    char *chop_a[MAX_COMMAND];
+    char *chop_b[MAX_TOKEN];
+    char *chop_c[MAX_TOKEN];
+    char *chop_d[MAX_TOKEN];
+
+    char *out[MAX_OUTPUT];
+    char *out_f[MAX_OUTPUT];
+    char *in[MAX_INPUT];
+    char *in_f[MAX_OUTPUT];
+
+    char *tmp[1];
+
+    int ac = 0;
+    int bc = 0;
+    int cc = 0;
+    int dc = 0;
+
+    int outc = 0;
+    int inc = 0;
+    int outfc = 0;
+    int infc = 0;
+
+    int flag = 0; //for skipping in&out files
+
+    tmp[0] = input;
+    chop_a[ac] = strtok_r(input, "|", &input); //chopping input with 'pipe'
+    if (chop_a[ac] == NULL) //return null only when token has only delimiter or NULL
     {
-        /* code */
+        printf(SYNTAX_ERROR, tmp[0]);
+        return;
+    }
+    while (chop_a[ac] != NULL)
+    {
+        ac++;
+        chop_a[ac] = strtok_r(NULL, "|", &input);
+        if (chop_a[ac] == NULL)
+        {
+            break;
+        }
+    }
+
+    for (int i = 0; i < ac; ++i) //chopping 'pipe-chopped' input with 'out'
+    {
+        tmp[0] = chop_a[i];
+        chop_b[bc] = strtok_r(chop_a[i], ">", &chop_a[i]);
+        if (chop_b[bc] == NULL)
+        {
+            printf(SYNTAX_ERROR, tmp[0]);
+            return;
+        }
+        while (chop_b[bc] != NULL)
+        {
+            bc++;
+            chop_b[bc] = strtok_r(NULL, ">", &chop_a[i]);
+            if (chop_b[bc] == NULL)
+            {
+                bc++; //inserting NULL between commands
+                break;
+            }
+        }
+    }
+
+    for (int i = 0; i < bc; ++i) //chopping 'pipe-out-chopped' input with 'in'
+    {
+        if (chop_b[i] == NULL)
+        {
+            chop_c[cc] = NULL;
+            cc++;
+            continue;
+        }
+        tmp[0] = chop_b[i];
+        chop_c[cc] = strtok_r(chop_b[i], "<", &chop_b[i]);
+        if (chop_c[cc] == NULL)
+        {
+            printf(SYNTAX_ERROR, tmp[0]);
+            return;
+        }
+        if ((cc > 0) && (chop_c[cc - 1] != NULL))
+        {
+            out[outc] = chop_c[cc]; //if token appeared after prog+arg
+            outc++;
+        }
+        while (chop_c[cc] != NULL)
+        {
+            cc++;
+            chop_c[cc] = strtok_r(NULL, "<", &chop_b[i]);
+            if (chop_c[cc] == NULL)
+            {
+                break;
+            }
+            in[inc] = chop_c[cc]; //if token appeared after 'in'
+            inc++;
+        }
+    }
+
+    for (int i = 0; i < cc; ++i) //chopping 'pipe-out-in-chopped' input with 'whitespace'
+    {
+        //if token is not null & not first one & not the very next one to NUll one (prog+arg)
+        if ((chop_c[i] != NULL) && (i > 0) && (flag == 0))
+        {
+            continue;
+        }
+        if (chop_c[i] == NULL)
+        {
+            chop_d[dc] = NULL; //keep NULL ones for seperating between commands
+            dc++;
+            flag = 1;
+            continue;
+        }
+        chop_d[dc] = strtok_r(chop_c[i], " \t\r\v\f\n", &chop_c[i]);
+        if (chop_d[dc] == NULL)
+        {
+            printf(SYNTAX_ERROR, "Only whitespace");
+            return;
+        }
+        while (chop_d[dc] != NULL)
+        {
+            dc++;
+            chop_d[dc] = strtok_r(NULL, " \t\r\v\f\n", &chop_c[i]);
+            if (chop_d[dc] == NULL)
+            {
+                break;
+            }
+        }
+        flag = 0; //indicate next one will not be prog+arg
+    }
+
+    for (int i = 0; i < outc; ++i) //chop all the whitespaces and save only very last token
+    {
+        out_f[outfc] = strtok_r(out[i], " \t\r\v\f\n", &out[i]);
+        if (out_f[outfc] == NULL)
+        {
+            printf(SYNTAX_ERROR, "file name error");
+            return;
+        }
+        while (out_f[outfc] != NULL)
+        {
+            char *temp = strtok_r(NULL, " \t\r\v\f\n", &out[i]);
+            if (temp == NULL)
+            {
+                outfc++;
+                out_f[outfc] = NULL;
+                break;
+            }
+            else
+            {
+                out_f[outfc] = temp;
+            }
+        }
+    }
+
+    for (int i = 0; i < inc; ++i) //chop all the whitespaces and save only very last token
+    {
+        in_f[infc] = strtok_r(in[i], " \t\r\v\f\n", &in[i]);
+        if (in_f[infc] == NULL)
+        {
+            printf(SYNTAX_ERROR, "file name error");
+            return;
+        }
+        while (in_f[infc] != NULL)
+        {
+            char *temp = strtok_r(NULL, " \t\r\v\f\n", &in[i]);
+            if (temp == NULL)
+            {
+                infc++;
+                in_f[infc] = NULL;
+                break;
+            }
+            else
+            {
+                in_f[infc] = temp;
+            }
+        }
+    }
+
+    for (int i = 0; i < dc; ++i)
+    {
+        debug("chop_d[%d] has now: %s", i, chop_d[i]);
+    }
+
+    for (int i = 0; i < outfc; ++i)
+    {
+        debug("Out[%d] has now: %s", i, out_f[i]);
+    }
+
+    for (int i = 0; i < infc; ++i)
+    {
+        debug("In[%d] has now: %s", i, in_f[i]);
     }
 
     return;
 }
 
-char **tokenize(char *inputcpy, int *inputc)
-{
-    int i = 0; //counter for string
-    char *temp_input = NULL; //temp input
-    char **inputv = NULL; //tokenzied input
-
-    temp_input = strtok(inputcpy, " \r\n\t\v\f"); //tokenize input
-
-    do
-    {
-        if (i > 0)
-        {
-            temp_input = strtok(NULL, " \r\n\t\v\f"); //tokenize the same input
-        }
-
-        if (temp_input == NULL)
-        {
-            break;
-        }
-
-        ++i; //update counter
-
-        if (i <= 1)
-        {
-            inputv = malloc(sizeof(char *)); //allocate space to hold input
-            if (inputv == NULL)
-            {
-                perror("malloc failed");
-                exit(EXIT_FAILURE);
-            }
-        }
-
-        else
-        {
-            inputv = realloc(inputv, sizeof(char *) * i); //allocate space to hold input
-            if (inputv == NULL)
-            {
-                perror("realloc failed");
-                exit(EXIT_FAILURE);
-            }
-        }
-
-        inputv[i - 1] = temp_input;
-
-    } while (temp_input != NULL);
-
-    *inputc = i;
-
-    return inputv;
-}
-
 void parse(char *home, char *cwd, char *input, int inputc, char **inputv)
 {
+    struct stat sb;
+
+    if (*(inputv) == NULL || inputc <= 0)
+    {
+        goto end;
+    }
+    //buit-in
     if (strcmp(*(inputv), "help") == 0) //help
         {
-            printf("help - print a list of all builtins and their basic usage in a single column (CSE320)\n"
+            printf("help - print a list of all builtins and their basic usage in a single column (CSE320 da best)\n"
                     "exit - exits the shell\n"
                     "cd - changes the current working directory of the shell\n"
                     "pwd - prints the absolute path of the current working directory\n");
-            goto free;
+            goto end;
         }
 
         if (strcmp(*(inputv), "exit") == 0) //exit
@@ -174,7 +307,7 @@ void parse(char *home, char *cwd, char *input, int inputc, char **inputv)
             if ((cwd = my_getcwd()) == 0)
             {
                 printf(BUILTIN_ERROR, input);
-                goto free;
+                goto end;
             }
 
             printf("%s\n", cwd);
@@ -188,13 +321,13 @@ void parse(char *home, char *cwd, char *input, int inputc, char **inputv)
                 if (setenv("OLDPWD", getenv("PWD"), 1) == -1)
                 {
                     printf(BUILTIN_ERROR, input);
-                    goto free;
+                    goto end;
                 }
 
                 if (chdir(home) == -1)
                 {
                     printf(BUILTIN_ERROR, input);
-                    goto free;
+                    goto end;
                 }
 
                 cwd = my_getcwd(); //setting PWD
@@ -210,7 +343,7 @@ void parse(char *home, char *cwd, char *input, int inputc, char **inputv)
                     if (chdir(getenv("OLDPWD")) == -1)
                     {
                         printf(BUILTIN_ERROR, input);
-                        goto free;
+                        goto end;
                     }
 
                     cwd = my_getcwd(); //setting PWD
@@ -224,13 +357,13 @@ void parse(char *home, char *cwd, char *input, int inputc, char **inputv)
                     if (setenv("OLDPWD", getenv("PWD"), 1) == -1)
                     {
                         printf(BUILTIN_ERROR, input);
-                        goto free;
+                        goto end;
                     }
 
                     if (chdir(".") == -1)
                     {
                         printf(BUILTIN_ERROR, input);
-                        goto free;
+                        goto end;
                     }
 
                     cwd = my_getcwd(); //setting PWD
@@ -244,13 +377,13 @@ void parse(char *home, char *cwd, char *input, int inputc, char **inputv)
                     if (setenv("OLDPWD", getenv("PWD"), 1) == -1)
                     {
                         printf(BUILTIN_ERROR, input);
-                        goto free;
+                        goto end;
                     }
 
                     if (chdir("..") == -1)
                     {
                         printf(BUILTIN_ERROR, input);
-                        goto free;
+                        goto end;
                     }
 
                     cwd = my_getcwd(); //setting PWD
@@ -264,13 +397,13 @@ void parse(char *home, char *cwd, char *input, int inputc, char **inputv)
                     if (setenv("OLDPWD", getenv("PWD"), 1) == -1)
                     {
                         printf(BUILTIN_ERROR, input);
-                        goto free;
+                        goto end;
                     }
 
                     if (chdir(*(inputv + 1)) == -1)
                     {
                         printf(BUILTIN_ERROR, input);
-                        goto free;
+                        goto end;
                     }
 
                     cwd = my_getcwd(); //setting PWD
@@ -279,24 +412,45 @@ void parse(char *home, char *cwd, char *input, int inputc, char **inputv)
                     goto free;
                 }
             }
-
         }
-
+        //execute
         else
         {
-            printf(EXEC_NOT_FOUND, input);
+            if (strstr((*inputv), "/") != NULL)
+            {
+                if (stat(*(inputv), &sb) == -1)
+                {
+                    printf(EXEC_ERROR, input);
+                    exit(EXIT_FAILURE);
+                }
+
+                else
+                {
+                    execute(input, inputv);
+                    goto end; //TODO
+                }
+            }
+
+            else
+            {
+                execute(input, inputv);
+                goto end;
+            }
         }
 
         free:
+        free(cwd);
+
+        end:
         return;
 }
 
-char *init(char *home, char *cwd)
+char *init_cwd(char *home, char *cwd)
 {
     // check getcwd()
     if ((cwd = my_getcwd()) == 0)
     {
-        perror("Failed using getcwd()"); //TODO
+        perror("getcwd failed"); //TODO
         exit(EXIT_FAILURE);
     }
 
@@ -308,60 +462,79 @@ char *init(char *home, char *cwd)
     {
         if (strcpy(cwd, cwd + strlen(home)) == NULL)
         {
-            perror("Failed using strcpy()"); //TODO
+            perror("strcpy failed"); //TODO
             exit(EXIT_FAILURE);
         }
         prepend(cwd, "~");
-
     }
 
     // realloc cwd: +1 is for empty char
-    cwd = realloc(cwd, strlen(cwd) + strlen(" :: howoo >> ") + 1);
+    cwd = (char *) realloc(cwd, strlen(cwd) + strlen(" :: howoo >> ") + 1);
+    if (cwd == NULL)
+    {
+        perror("realloc failed"); //TODO
+        exit(EXIT_FAILURE);
+    }
 
     // concate cwd
     cwd = strcat(cwd, " :: howoo >> ");
-
     if (cwd == NULL)
     {
-        perror("realloc failed");
+        perror("strcat failed");
         exit(EXIT_FAILURE);
     }
 
     return cwd;
 }
 
-// void my_system(char *path, char *input)
-// {
-//     pid_t child_pid;
-//     char *chopped_input;
+void execute(char *input, char **file_array)
+{
+    pid_t child_pid;
+    pid_t tpid;
+    int child_status;
 
-//     strsep();
+    if ((child_pid = fork()) == -1) //fork
+    {
+        printf(EXEC_ERROR, input);
+        exit(EXIT_FAILURE);
+    }
 
+    if ((int) child_pid == 0) //child
+    {
 
+        if (execvp(*file_array, file_array) == -1) //overide child process
+        {
+            printf(EXEC_NOT_FOUND, input);
+            exit(EXIT_FAILURE);
+        }
+        exit(EXIT_SUCCESS);
+    }
 
-//     child_pid = fork(); //fork
+    else //parent
+    {
+        do
+        {
+            tpid = wait(&child_status); //wait for child
+            if (tpid != child_pid) //if parent has more than one child
+            {
+                // kill(tpid);
+            }
+        } while (tpid != child_pid);
+    }
 
-//     if ((int) child_pid == 0)
-//     {
-//         execv(path, chopped_input);
-//     }
-//     else
-//     {
-
-//     }
-
-// }
+    return;
+}
 
 void prepend(char* s, const char* t)
 {
-    if (memmove(s + strlen(t), s, strlen(s) + 1) == NULL)
+    if (memmove(s + strlen(t), s, strlen(s) + 1) == NULL) //+1 for empty char
     {
-        perror("memmove failed\n");
+        perror("memmove failed");
         exit(EXIT_FAILURE);
     }
-    if (memcpy(s, t, strlen(t)) == NULL)
+    if (memcpy(s, t, strlen(t)) == NULL) //do not copy empty char of t
     {
-        perror("memmove failed\n");
+        perror("memcpy failed");
         exit(EXIT_FAILURE);
     }
 
@@ -370,24 +543,36 @@ void prepend(char* s, const char* t)
 
 char *my_getcwd()
 {
-  size_t size = 100;
+    size_t size = 100;
+    char *buffer = NULL;
 
-  while (1)
+    while (1)
     {
-      char *buffer = (char *) malloc(size);
+        buffer = (char *) malloc(size);
 
-      if (getcwd(buffer, size) == buffer)
-      {
-        return buffer;
-      }
+        if (buffer == NULL)
+        {
+            perror("malloc failed");
+            exit(EXIT_FAILURE);
+        }
 
-      free(buffer);
+        if (getcwd(buffer, size) != NULL)
+        {
+            return buffer;
+        }
 
-      if (errno != ERANGE)
-      {
-        return 0;
-      }
+        else
+        {
+            free(buffer);
 
-      size *= 2; //TODO
+            if (errno != ERANGE) //If error is not about the range
+            {
+                return 0;
+            }
+
+            size *= 2;
+        }
     }
+
+    return buffer;
 }

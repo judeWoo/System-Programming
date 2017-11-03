@@ -1,0 +1,15 @@
+total 48
+drwxrwxr-x  7 student student 4096 Nov  1 02:19 .
+drwxr-xr-x 10 student student 4096 Oct 23 00:05 ..
+drwxrwxr-x  2 student student 4096 Nov  1 01:38 bin
+drwxrwxr-x  2 student student 4096 Nov  1 01:38 build
+-rw-rw-r--  1 student student   96 Nov  1 02:19 d.txt
+drwxrwxr-x  2 student student 4096 Oct 28 17:33 include
+-rw-rw-r--  1 student student    5 Nov  1 14:37 input.txt
+-rw-rw-r--  1 student student 1034 Oct 25 20:13 Makefile
+-rw-rw-r--  1 student student  612 Oct 23 00:05 Makefile.config
+-rw-rw-r--  1 student student    0 Nov  1 02:19 out
+-rw-rw-r--  1 student student    0 Nov  1 14:56 output.txt
+drwxrwxr-x  2 student student 4096 Oct 28 17:33 src
+-rw-rw-r--  1 student student  107 Oct 23 00:05 testcmds.sf
+drwxrwxr-x  2 student student 4096 Oct 23 00:05 tests
