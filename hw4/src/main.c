@@ -11,18 +11,18 @@
 #include "sfish.h"
 #include "debug.h"
 
-#define MAX_COMMAND 1024
-#define MAX_TOKEN MAX_COMMAND
-#define MAX_INPUT MAX_COMMAND
-#define MAX_OUTPUT MAX_COMMAND
-
-char *inputv[MAX_TOKEN]; //tokenized input
+char *input_buf[MAX_TOKEN];
+char *outfile_buf[MAX_OUTPUT];
+char *infile_buf[MAX_INPUT];
 
 int main(int argc, char *argv[], char *envp[]) {
-    int inputc; //tokenized input size
+    int input_bufc; //tokenized input buf size
+    int outfile_bufc; //output file buf size
+    int infile_bufc; //input file buf size
     char *cwd = NULL; //current working dir
     char *input = NULL; //input
     char *home = NULL; //home dir
+    char *input_holder[1];
 
     if (!isatty(STDIN_FILENO)) //if from file
     {
@@ -47,12 +47,14 @@ int main(int argc, char *argv[], char *envp[]) {
 
     do
     {
-        //init inputc
-        inputc = 0;
+        //init sizes
+        input_bufc = outfile_bufc = infile_bufc = 0;
         //init cwd
         cwd = init_cwd(home, cwd);
         //init input
         input = readline(cwd);
+        //init holder
+        input_holder[0] = input;
         //init to parse
         free(cwd);
 
@@ -68,13 +70,15 @@ int main(int argc, char *argv[], char *envp[]) {
             continue;
         }
 
-        //check ||
+        //check || TODO
 
         //tokenize
-        tokenized(input, &inputc);
+        tokenized(input, &input_bufc, &outfile_bufc, &infile_bufc);
 
         //parse
-        // parse(home, cwd, input, inputc, inputv);
+        parse(home, cwd, input_holder[0], input_bufc, input_buf);
+
+        //empty buf
 
         //free
         rl_free(input);
@@ -84,7 +88,7 @@ int main(int argc, char *argv[], char *envp[]) {
     return EXIT_SUCCESS;
 }
 
-void tokenized(char *input, int *inputc)
+void tokenized(char *input, int *input_bufc, int *outfile_bufc, int *infile_bufc)
 {
     char *chop_a[MAX_COMMAND];
     char *chop_b[MAX_TOKEN];
@@ -111,6 +115,7 @@ void tokenized(char *input, int *inputc)
     int flag = 0; //for skipping in&out files
 
     tmp[0] = input;
+    //check | either side
     chop_a[ac] = strtok_r(input, "|", &input); //chopping input with 'pipe'
     if (chop_a[ac] == NULL) //return null only when token has only delimiter or NULL
     {
@@ -121,14 +126,17 @@ void tokenized(char *input, int *inputc)
     {
         ac++;
         chop_a[ac] = strtok_r(NULL, "|", &input);
-        if (chop_a[ac] == NULL)
+        if (chop_a[ac] == NULL /* && ac != 2*/)
         {
             break;
         }
+        //else if NULL & ac ==syntax error
+        //else break
     }
 
     for (int i = 0; i < ac; ++i) //chopping 'pipe-chopped' input with 'out'
     {
+        //check > either side
         tmp[0] = chop_a[i];
         chop_b[bc] = strtok_r(chop_a[i], ">", &chop_a[i]);
         if (chop_b[bc] == NULL)
@@ -150,6 +158,7 @@ void tokenized(char *input, int *inputc)
 
     for (int i = 0; i < bc; ++i) //chopping 'pipe-out-chopped' input with 'in'
     {
+        //check < either side
         if (chop_b[i] == NULL)
         {
             chop_c[cc] = NULL;
@@ -198,7 +207,6 @@ void tokenized(char *input, int *inputc)
         chop_d[dc] = strtok_r(chop_c[i], " \t\r\v\f\n", &chop_c[i]);
         if (chop_d[dc] == NULL)
         {
-            printf(SYNTAX_ERROR, "Only whitespace");
             return;
         }
         while (chop_d[dc] != NULL)
@@ -226,12 +234,22 @@ void tokenized(char *input, int *inputc)
             char *temp = strtok_r(NULL, " \t\r\v\f\n", &out[i]);
             if (temp == NULL)
             {
+                if (out_f[outfc][0] == '-')
+                {
+                    printf(SYNTAX_ERROR, "Wrong location of flag");
+                    return;
+                }
                 outfc++;
                 out_f[outfc] = NULL;
                 break;
             }
             else
             {
+                if (temp[0] == '-')
+                {
+                    printf(SYNTAX_ERROR, "Wrong location of flag");
+                    return;
+                }
                 out_f[outfc] = temp;
             }
         }
@@ -250,36 +268,38 @@ void tokenized(char *input, int *inputc)
             char *temp = strtok_r(NULL, " \t\r\v\f\n", &in[i]);
             if (temp == NULL)
             {
+                // if (in_f[infc][0] == '-')
+                // {
+                //     printf(SYNTAX_ERROR, "Wrong location of flag");
+                //     return;
+                // }
                 infc++;
                 in_f[infc] = NULL;
                 break;
             }
             else
             {
+                // if (temp[0] == '-')
+                // {
+                //     printf(SYNTAX_ERROR, "Wrong location of flag");
+                //     return;
+                // }
                 in_f[infc] = temp;
             }
         }
     }
+    //update sizes
+    *input_bufc = dc;
+    *outfile_bufc = outfc;
+    *infile_bufc = infc;
 
-    for (int i = 0; i < dc; ++i)
-    {
-        debug("chop_d[%d] has now: %s", i, chop_d[i]);
-    }
-
-    for (int i = 0; i < outfc; ++i)
-    {
-        debug("Out[%d] has now: %s", i, out_f[i]);
-    }
-
-    for (int i = 0; i < infc; ++i)
-    {
-        debug("In[%d] has now: %s", i, in_f[i]);
-    }
+    //save token/out/in to global buffers
+    fillbuf(chop_d, out_f, in_f, dc, outfc, infc);
 
     return;
 }
 
-void parse(char *home, char *cwd, char *input, int inputc, char **inputv)
+void parse(char *home, char *cwd, char *input, int inputc, char *inputv[])
 {
     struct stat sb;
 
@@ -314,9 +334,9 @@ void parse(char *home, char *cwd, char *input, int inputc, char **inputv)
             goto free;
         }
 
-        if (strcmp(*(inputv), "cd") == 0) //cd to home
+        if (strcmp(*(inputv), "cd") == 0)
         {
-            if (inputc == 1)
+            if (inputc == 2) //cd to home
             {
                 if (setenv("OLDPWD", getenv("PWD"), 1) == -1)
                 {
@@ -485,6 +505,26 @@ char *init_cwd(char *home, char *cwd)
     }
 
     return cwd;
+}
+
+void fillbuf(char *input[], char *outfile[], char *infile[], int inputc, int outfilec, int infilec)
+{
+    for (int i = 0; i < inputc; ++i)
+    {
+        input_buf[i] = input[i];
+    }
+
+    for (int i = 0; i < outfilec; ++i)
+    {
+        outfile_buf[i] = outfile[i];
+    }
+
+    for (int i = 0; i < infilec; ++i)
+    {
+        infile_buf[i] = infile[i];
+    }
+
+    return;
 }
 
 void execute(char *input, char **file_array)

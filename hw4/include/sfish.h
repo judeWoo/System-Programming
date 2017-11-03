@@ -8,12 +8,17 @@
 #define BUILTIN_ERROR  "sfish builtin error: %s\n"
 #define SYNTAX_ERROR   "sfish syntax error: %s\n"
 #define EXEC_ERROR     "sfish exec error: %s\n"
+#define MAX_COMMAND 1024
+#define MAX_TOKEN MAX_COMMAND
+#define MAX_INPUT MAX_COMMAND
+#define MAX_OUTPUT MAX_COMMAND
 
 char *my_getcwd(void);
 void prepend(char* s, const char* t);
 void execute(char *input, char **file_array);
+void fillbuf(char *input[], char *outfile[], char *infile[], int inputc, int outfilec, int infilec);
 char *init_cwd(char *home, char *cwd);
-void parse(char *home, char *cwd, char *input, int inputc, char **inputv);
-void tokenized(char *input, int *inputc);
+void parse(char *home, char *cwd, char *input, int inputc, char *inputv[]);
+void tokenized(char *input, int *input_bufc, int *outfile_bufc, int *infile_bufc);
 
 #endif
