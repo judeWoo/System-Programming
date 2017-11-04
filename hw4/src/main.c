@@ -361,7 +361,6 @@ void parse(char *home, char *cwd, char *input, int input_bufc, int outfile_bufc,
         for (int i = 0; input_index < input_bufc; ++i, ++input_index) //populate command with input buf
         {
             command[i] = input_buf[input_index];
-            // debug("input is: %s", input_buf[input_index]);
             if (input_buf[input_index] == NULL)
             {
                 if (input_index < input_bufc)
@@ -377,8 +376,6 @@ void parse(char *home, char *cwd, char *input, int input_bufc, int outfile_bufc,
             perror("pipe failed");
             exit(EXIT_FAILURE);
         }
-
-        debug("Pipe One: %d, Pipe Two: %d", pipefd[0], pipefd[1]);
 
         if ((a == 0) && (a == outfile_bufc - 1)) //indicates just one command
         {
@@ -463,6 +460,7 @@ void execute(char *home, char *cwd, char *input, char **command, int in, int out
             cwd = my_getcwd(); //setting PWD
             setenv("PWD", cwd, 1);
             free(cwd);
+            return;
         }
 
         else
@@ -478,6 +476,7 @@ void execute(char *home, char *cwd, char *input, char **command, int in, int out
                 cwd = my_getcwd(); //setting PWD
                 setenv("PWD", cwd, 1);
                 free(cwd);
+                return;
 
             }
 
@@ -498,6 +497,7 @@ void execute(char *home, char *cwd, char *input, char **command, int in, int out
                 cwd = my_getcwd(); //setting PWD
                 setenv("PWD", cwd, 1);
                 free(cwd);
+                return;
 
             }
 
@@ -518,6 +518,7 @@ void execute(char *home, char *cwd, char *input, char **command, int in, int out
                 cwd = my_getcwd(); //setting PWD
                 setenv("PWD", cwd, 1);
                 free(cwd);
+                return;
             }
 
             else //cd to path
@@ -537,6 +538,7 @@ void execute(char *home, char *cwd, char *input, char **command, int in, int out
                 cwd = my_getcwd(); //setting PWD
                 setenv("PWD", cwd, 1);
                 free(cwd);
+                return;
             }
         }
     }

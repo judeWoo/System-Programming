@@ -1,1 +1,4 @@
-/home/student/howoo/hw4
+help - print a list of all builtins and their basic usage in a single column
+exit - exits the shell
+cd - changes the current working directory of the shell
+pwd - prints the absolute path of the current working directory
