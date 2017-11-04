@@ -14,10 +14,13 @@
 #define MAX_OUTPUT MAX_COMMAND
 
 char *my_getcwd(void);
+char *init_cwd(char *home, char *cwd);
+int syntax_checker(char *input);
 void prepend(char* s, const char* t);
 void execute(char *input, char **file_array);
 void fillbuf(char *input[], char *outfile[], char *infile[], int inputc, int outfilec, int infilec);
-char *init_cwd(char *home, char *cwd);
+void emptybuf(int inputc, int outfilec, int infilec);
+void piped(int inputc, int outfilec, int infilec);
 void parse(char *home, char *cwd, char *input, int inputc, char *inputv[]);
 void tokenized(char *input, int *input_bufc, int *outfile_bufc, int *infile_bufc);
 

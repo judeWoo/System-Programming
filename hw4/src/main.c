@@ -7,6 +7,8 @@
 #include <errno.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
+#include <sys/types.h>
+#include <fcntl.h>
 
 #include "sfish.h"
 #include "debug.h"
@@ -38,7 +40,7 @@ int main(int argc, char *argv[], char *envp[]) {
     // init home
     if ((home = getenv("HOME")) == NULL)
     {
-        perror("Home directory not set"); //TODO
+        perror("Home directory not set");
         exit(EXIT_FAILURE);
     }
 
@@ -66,11 +68,14 @@ int main(int argc, char *argv[], char *envp[]) {
         // If EOF is read (aka ^D) readline returns NULL
         if (input == NULL)
         {
-            free(cwd);
+            input = input_holder[0];
             continue;
         }
 
-        //check || TODO
+        if (syntax_checker(input) == 1) //TODO
+        {
+            goto free;
+        }
 
         //tokenize
         tokenized(input, &input_bufc, &outfile_bufc, &infile_bufc);
@@ -78,9 +83,9 @@ int main(int argc, char *argv[], char *envp[]) {
         //parse
         parse(home, cwd, input_holder[0], input_bufc, input_buf);
 
-        //empty buf
+        //emptybuf();
 
-        //free
+        free:
         rl_free(input);
 
     } while (1);
@@ -100,8 +105,6 @@ void tokenized(char *input, int *input_bufc, int *outfile_bufc, int *infile_bufc
     char *in[MAX_INPUT];
     char *in_f[MAX_OUTPUT];
 
-    char *tmp[1];
-
     int ac = 0;
     int bc = 0;
     int cc = 0;
@@ -113,35 +116,29 @@ void tokenized(char *input, int *input_bufc, int *outfile_bufc, int *infile_bufc
     int infc = 0;
 
     int flag = 0; //for skipping in&out files
+    int out_flag = 0;
+    int in_flag = 0;
 
-    tmp[0] = input;
-    //check | either side
     chop_a[ac] = strtok_r(input, "|", &input); //chopping input with 'pipe'
     if (chop_a[ac] == NULL) //return null only when token has only delimiter or NULL
     {
-        printf(SYNTAX_ERROR, tmp[0]);
         return;
     }
     while (chop_a[ac] != NULL)
     {
         ac++;
         chop_a[ac] = strtok_r(NULL, "|", &input);
-        if (chop_a[ac] == NULL /* && ac != 2*/)
+        if (chop_a[ac] == NULL)
         {
             break;
         }
-        //else if NULL & ac ==syntax error
-        //else break
     }
 
     for (int i = 0; i < ac; ++i) //chopping 'pipe-chopped' input with 'out'
     {
-        //check > either side
-        tmp[0] = chop_a[i];
         chop_b[bc] = strtok_r(chop_a[i], ">", &chop_a[i]);
         if (chop_b[bc] == NULL)
         {
-            printf(SYNTAX_ERROR, tmp[0]);
             return;
         }
         while (chop_b[bc] != NULL)
@@ -158,24 +155,35 @@ void tokenized(char *input, int *input_bufc, int *outfile_bufc, int *infile_bufc
 
     for (int i = 0; i < bc; ++i) //chopping 'pipe-out-chopped' input with 'in'
     {
-        //check < either side
         if (chop_b[i] == NULL)
         {
             chop_c[cc] = NULL;
             cc++;
+            if (out_flag == 0)
+            {
+                out[outc] = NULL; //if token appeared after prog+arg
+                outc++;
+            }
+            if (in_flag == 0)
+            {
+                in[inc] = NULL; //if token appeared after prog+arg
+                inc++;
+            }
+            out_flag = 0;
+            in_flag = 0;
             continue;
         }
-        tmp[0] = chop_b[i];
+
         chop_c[cc] = strtok_r(chop_b[i], "<", &chop_b[i]);
         if (chop_c[cc] == NULL)
         {
-            printf(SYNTAX_ERROR, tmp[0]);
             return;
         }
         if ((cc > 0) && (chop_c[cc - 1] != NULL))
         {
             out[outc] = chop_c[cc]; //if token appeared after prog+arg
             outc++;
+            out_flag = 1;
         }
         while (chop_c[cc] != NULL)
         {
@@ -187,6 +195,7 @@ void tokenized(char *input, int *input_bufc, int *outfile_bufc, int *infile_bufc
             }
             in[inc] = chop_c[cc]; //if token appeared after 'in'
             inc++;
+            in_flag = 1;
         }
     }
 
@@ -226,8 +235,8 @@ void tokenized(char *input, int *input_bufc, int *outfile_bufc, int *infile_bufc
         out_f[outfc] = strtok_r(out[i], " \t\r\v\f\n", &out[i]);
         if (out_f[outfc] == NULL)
         {
-            printf(SYNTAX_ERROR, "file name error");
-            return;
+            outfc++;
+            continue;
         }
         while (out_f[outfc] != NULL)
         {
@@ -260,30 +269,20 @@ void tokenized(char *input, int *input_bufc, int *outfile_bufc, int *infile_bufc
         in_f[infc] = strtok_r(in[i], " \t\r\v\f\n", &in[i]);
         if (in_f[infc] == NULL)
         {
-            printf(SYNTAX_ERROR, "file name error");
-            return;
+            infc++;
+            continue;
         }
         while (in_f[infc] != NULL)
         {
             char *temp = strtok_r(NULL, " \t\r\v\f\n", &in[i]);
             if (temp == NULL)
             {
-                // if (in_f[infc][0] == '-')
-                // {
-                //     printf(SYNTAX_ERROR, "Wrong location of flag");
-                //     return;
-                // }
                 infc++;
                 in_f[infc] = NULL;
                 break;
             }
             else
             {
-                // if (temp[0] == '-')
-                // {
-                //     printf(SYNTAX_ERROR, "Wrong location of flag");
-                //     return;
-                // }
                 in_f[infc] = temp;
             }
         }
@@ -310,7 +309,7 @@ void parse(char *home, char *cwd, char *input, int inputc, char *inputv[])
     //buit-in
     if (strcmp(*(inputv), "help") == 0) //help
         {
-            printf("help - print a list of all builtins and their basic usage in a single column (CSE320 da best)\n"
+            printf("help - print a list of all builtins and their basic usage in a single column\n"
                     "exit - exits the shell\n"
                     "cd - changes the current working directory of the shell\n"
                     "pwd - prints the absolute path of the current working directory\n");
@@ -447,7 +446,7 @@ void parse(char *home, char *cwd, char *input, int inputc, char *inputv[])
                 else
                 {
                     execute(input, inputv);
-                    goto end; //TODO
+                    goto end;
                 }
             }
 
@@ -465,46 +464,23 @@ void parse(char *home, char *cwd, char *input, int inputc, char *inputv[])
         return;
 }
 
-char *init_cwd(char *home, char *cwd)
+void piped(int inputc, int outfilec, int infilec)
 {
-    // check getcwd()
-    if ((cwd = my_getcwd()) == 0)
-    {
-        perror("getcwd failed"); //TODO
-        exit(EXIT_FAILURE);
-    }
+    // int fd_a[2];
+    // int fd_b[2];
 
-    // set PWD
-    setenv("PWD", cwd, 1);
+    // int command_num;
 
-    //change home dir to ~
-    if (strncmp(cwd, home, strlen(home)) == 0)
-    {
-        if (strcpy(cwd, cwd + strlen(home)) == NULL)
-        {
-            perror("strcpy failed"); //TODO
-            exit(EXIT_FAILURE);
-        }
-        prepend(cwd, "~");
-    }
+    // pid_t pid;
 
-    // realloc cwd: +1 is for empty char
-    cwd = (char *) realloc(cwd, strlen(cwd) + strlen(" :: howoo >> ") + 1);
-    if (cwd == NULL)
-    {
-        perror("realloc failed"); //TODO
-        exit(EXIT_FAILURE);
-    }
+    //cal num of commands by searching
 
-    // concate cwd
-    cwd = strcat(cwd, " :: howoo >> ");
-    if (cwd == NULL)
-    {
-        perror("strcat failed");
-        exit(EXIT_FAILURE);
-    }
+    return;
+}
 
-    return cwd;
+void emptybuf(int inputc, int outfilec, int infilec)
+{
+    return;
 }
 
 void fillbuf(char *input[], char *outfile[], char *infile[], int inputc, int outfilec, int infilec)
@@ -530,7 +506,7 @@ void fillbuf(char *input[], char *outfile[], char *infile[], int inputc, int out
 void execute(char *input, char **file_array)
 {
     pid_t child_pid;
-    pid_t tpid;
+    pid_t pid;
     int child_status;
 
     if ((child_pid = fork()) == -1) //fork
@@ -554,12 +530,12 @@ void execute(char *input, char **file_array)
     {
         do
         {
-            tpid = wait(&child_status); //wait for child
-            if (tpid != child_pid) //if parent has more than one child
+            pid = wait(&child_status); //wait for child
+            if (pid != child_pid) //if parent has more than one child
             {
-                // kill(tpid);
+                // kill(pid);
             }
-        } while (tpid != child_pid);
+        } while (pid != child_pid);
     }
 
     return;
@@ -579,6 +555,56 @@ void prepend(char* s, const char* t)
     }
 
     return;
+}
+
+int syntax_checker(char *input)
+{
+    //check either side of | > <
+    //check consecutive | > <
+    //check argument
+    return 0;
+}
+
+char *init_cwd(char *home, char *cwd)
+{
+    // check getcwd()
+    if ((cwd = my_getcwd()) == 0)
+    {
+        perror("getcwd failed");
+        exit(EXIT_FAILURE);
+    }
+
+    // set PWD
+    setenv("PWD", cwd, 1);
+
+    //change home dir to ~
+    if (strncmp(cwd, home, strlen(home)) == 0)
+    {
+        if (strcpy(cwd, cwd + strlen(home)) == NULL)
+        {
+            perror("strcpy failed");
+            exit(EXIT_FAILURE);
+        }
+        prepend(cwd, "~");
+    }
+
+    // realloc cwd: +1 is for empty char
+    cwd = (char *) realloc(cwd, strlen(cwd) + strlen(" :: howoo >> ") + 1);
+    if (cwd == NULL)
+    {
+        perror("realloc failed");
+        exit(EXIT_FAILURE);
+    }
+
+    // concate cwd
+    cwd = strcat(cwd, " :: howoo >> ");
+    if (cwd == NULL)
+    {
+        perror("strcat failed");
+        exit(EXIT_FAILURE);
+    }
+
+    return cwd;
 }
 
 char *my_getcwd()
