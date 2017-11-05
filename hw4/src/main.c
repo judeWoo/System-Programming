@@ -17,6 +17,8 @@ char *input_buf[MAX_TOKEN];
 char *outfile_buf[MAX_OUTPUT];
 char *infile_buf[MAX_INPUT];
 
+int child_kill;
+
 int main(int argc, char *argv[], char *envp[]) {
     int input_bufc; //tokenized input buf size
     int outfile_bufc; //output file buf size, also indicates # of commands
@@ -50,7 +52,7 @@ int main(int argc, char *argv[], char *envp[]) {
     do
     {
         //init sizes
-        input_bufc = outfile_bufc = infile_bufc = 0;
+        input_bufc = outfile_bufc = infile_bufc = child_kill = 0;
         //init cwd
         cwd = init_cwd(home, cwd);
         //init input
@@ -68,7 +70,6 @@ int main(int argc, char *argv[], char *envp[]) {
         // If EOF is read (aka ^D) readline returns NULL
         if (input == NULL)
         {
-            input = input_holder[0];
             continue;
         }
 
@@ -371,6 +372,11 @@ void parse(char *home, char *cwd, char *input, int input_bufc, int outfile_bufc,
             }
         }
 
+        if (input_index == input_bufc)
+        {
+            child_kill = 1;
+        }
+
         if (pipe(pipefd) == -1)
         {
             perror("pipe failed");
@@ -588,31 +594,32 @@ void execute(char *home, char *cwd, char *input, char **command, int in, int out
 
     else //parent
     {
-        do
+        if (dup2(STDIN_FILENO, in) == -1)
         {
-            if (dup2(STDIN_FILENO, in) == -1)
-            {
-                printf(EXEC_ERROR, "NO dup2");
-                exit(EXIT_FAILURE);
-            }
+            printf(EXEC_ERROR, "NO dup2");
+            exit(EXIT_FAILURE);
+        }
 
-            if (dup2(STDOUT_FILENO, out) == -1)
-            {
-                printf(EXEC_ERROR, "NO dup2");
-                exit(EXIT_FAILURE);
-            }
+        if (dup2(STDOUT_FILENO, out) == -1)
+        {
+            printf(EXEC_ERROR, "NO dup2");
+            exit(EXIT_FAILURE);
+        }
 
-            pid = wait(&child_status); //wait for child
-
-            if (pid != child_pid) //if parent has more than one child
+        if (child_kill == 1)
+        {
+            do
             {
-                // if (pid == EXIT_FAILURE)
-                // {
-                //     exit(EXIT_FAILURE);
-                // }
-                //else do sth to kill child
-            }
-        } while (pid != child_pid);
+                pid = wait(&child_status); //wait for child
+
+                if (pid != child_pid) //if parent has more than one child
+                {
+                    debug("NOOOOO %s", "Sad");
+                    //kill all child
+                }
+            } while (pid != child_pid);
+
+        }
     }
 
     return;
