@@ -4,11 +4,14 @@
 #include <string.h>
 #include <stdbool.h>
 #include <readline/readline.h>
+#include <readline/history.h>
 #include <errno.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <sys/types.h>
 #include <fcntl.h>
+#include <signal.h>
+#include <setjmp.h>
 
 #include "sfish.h"
 #include "debug.h"
@@ -17,16 +20,48 @@ char *input_buf[MAX_TOKEN];
 char *outfile_buf[MAX_OUTPUT];
 char *infile_buf[MAX_INPUT];
 
-int child_kill;
+int child_wait; //flag to wait child
+
+sigjmp_buf sigint_buf;
 
 int main(int argc, char *argv[], char *envp[]) {
     int input_bufc; //tokenized input buf size
     int outfile_bufc; //output file buf size, also indicates # of commands
     int infile_bufc; //input file buf size, also indicates # of commands
+
     char *cwd = NULL; //current working dir
     char *input = NULL; //input
     char *home = NULL; //home dir
-    char *input_holder[1]; //temporary input holder
+    char *input_holder = NULL; //temporary input holder
+
+    struct sigaction sa;//use sigaction
+
+    //Setup
+    sa.sa_handler = &signal_handle;
+    //Restart the system call
+    sa.sa_flags = SA_RESTART;
+    //Filling signal to full
+    if (sigfillset(&sa.sa_mask) == -1)
+    {
+        perror("Cannot Block Signal");
+        exit(EXIT_FAILURE); // Should not happen
+    }
+
+    //Intercept
+    if (sigaction(SIGINT, &sa, NULL) == -1) { //Register Sigaction
+        perror("Cannot Handle SIGINT");
+        exit(EXIT_FAILURE); // Should not happen
+    }
+    if (sigaction(SIGTSTP, &sa, NULL) == -1) { //Register Sigaction
+        perror("Cannot Handle SIGINT");
+        exit(EXIT_FAILURE); // Should not happen
+    }
+
+    while (sigsetjmp(sigint_buf, 1) != 0) //calling sigsetjmp again to return 0;
+    {
+        emptybuf(input_bufc, outfile_bufc, infile_bufc);
+        printf("\n"); //for line alignment
+    }
 
     if (!isatty(STDIN_FILENO)) //if from file
     {
@@ -52,13 +87,11 @@ int main(int argc, char *argv[], char *envp[]) {
     do
     {
         //init sizes
-        input_bufc = outfile_bufc = infile_bufc = child_kill = 0;
+        input_bufc = outfile_bufc = infile_bufc = child_wait = 0;
         //init cwd
         cwd = init_cwd(home, cwd);
         //init input
         input = readline(cwd);
-        //init holder
-        input_holder[0] = input;
         //init to parse
         free(cwd);
 
@@ -72,9 +105,14 @@ int main(int argc, char *argv[], char *envp[]) {
         {
             continue;
         }
+        //init holder
+        input_holder = strdup(input);
 
-        if (syntax_checker(input) == 1) //TODO
+        add_history(input_holder);
+
+        if (syntax_checker(input_holder) == -1) //TODO
         {
+            printf(SYNTAX_ERROR, "SYNTAX_ERROR");
             goto free;
         }
 
@@ -82,17 +120,41 @@ int main(int argc, char *argv[], char *envp[]) {
         tokenized(input, &input_bufc, &outfile_bufc, &infile_bufc);
 
         //parse
-        parse(home, cwd, input_holder[0], input_bufc, outfile_bufc, infile_bufc);
+        parse(home, cwd, input_bufc, outfile_bufc, infile_bufc);
 
-        //empty buf
+        // //empty buf
         emptybuf(input_bufc, outfile_bufc, infile_bufc);
 
         free:
         rl_free(input);
+        free(input_holder);
 
     } while (1);
 
     return EXIT_SUCCESS;
+}
+
+void signal_handle(int signal)
+{
+    pid_t pid;
+    // int child_status;
+
+    if (signal == SIGINT)
+    {
+        do
+        {
+            pid = wait(NULL);
+        } while (pid != -1);
+        exit(EXIT_SUCCESS);
+        // siglongjmp(sigint_buf, 1);
+    }
+
+    else //sigtstp
+    {
+        // waitpid(pid, &status, WNOHANG);
+    }
+
+    return;
 }
 
 void tokenized(char *input, int *input_bufc, int *outfile_bufc, int *infile_bufc)
@@ -346,7 +408,7 @@ void prepend(char* s, const char* t)
     return;
 }
 
-void parse(char *home, char *cwd, char *input, int input_bufc, int outfile_bufc, int infile_bufc)
+void parse(char *home, char *cwd, int input_bufc, int outfile_bufc, int infile_bufc)
 {
     char *command[MAX_TOKEN]; //takes one command at a time
     int input_index = 0;
@@ -374,7 +436,7 @@ void parse(char *home, char *cwd, char *input, int input_bufc, int outfile_bufc,
 
         if (input_index == input_bufc)
         {
-            child_kill = 1;
+            child_wait = 1;
         }
 
         if (pipe(pipefd) == -1)
@@ -385,7 +447,7 @@ void parse(char *home, char *cwd, char *input, int input_bufc, int outfile_bufc,
 
         if ((a == 0) && (a == outfile_bufc - 1)) //indicates just one command
         {
-            execute(home, cwd, input, command, 0, 1, a, b);
+            execute(home, cwd, command, 0, 1, a, b);
             close(pipefd[0]);
             close(pipefd[1]);
         }
@@ -393,12 +455,12 @@ void parse(char *home, char *cwd, char *input, int input_bufc, int outfile_bufc,
         else if (a == 0) //indicates first command
         {
             prev_pipefd[0] = pipefd[0];
-            execute(home, cwd, input, command, 0, pipefd[1], a, b);
+            execute(home, cwd, command, 0, pipefd[1], a, b);
             prev_pipefd[1] = pipefd[1];
         }
         else if (a == outfile_bufc - 1) //indicates last command
         {
-            execute(home, cwd, input, command, prev_pipefd[0], 1, a, b);
+            execute(home, cwd, command, prev_pipefd[0], 1, a, b);
             close(pipefd[0]);
             close(pipefd[1]);
             close(prev_pipefd[0]);
@@ -406,7 +468,7 @@ void parse(char *home, char *cwd, char *input, int input_bufc, int outfile_bufc,
         }
         else //indicates commands in between
         {
-            execute(home, cwd, input, command, prev_pipefd[0], pipefd[1], a, b);
+            execute(home, cwd, command, prev_pipefd[0], pipefd[1], a, b);
             close(prev_pipefd[0]);
             close(prev_pipefd[1]);
             prev_pipefd[0] = pipefd[0];
@@ -418,7 +480,7 @@ void parse(char *home, char *cwd, char *input, int input_bufc, int outfile_bufc,
     return;
 }
 
-void execute(char *home, char *cwd, char *input, char **command, int in, int out, int outfile_bufc, int infile_bufc)
+void execute(char *home, char *cwd, char **command, int in, int out, int outfile_bufc, int infile_bufc)
 {
     pid_t child_pid;
     pid_t pid;
@@ -436,7 +498,7 @@ void execute(char *home, char *cwd, char *input, char **command, int in, int out
     {
         if (stat(command[0], &sb) == -1)
         {
-            printf(EXEC_ERROR, input);
+            printf(EXEC_ERROR, "Not correct file");
             exit(EXIT_FAILURE);
         }
 
@@ -453,13 +515,13 @@ void execute(char *home, char *cwd, char *input, char **command, int in, int out
         {
             if (setenv("OLDPWD", getenv("PWD"), 1) == -1)
             {
-                printf(BUILTIN_ERROR, input);
+                printf(BUILTIN_ERROR, "Cannot set OLDPWD");
                 return;
             }
 
             if (chdir(home) == -1)
             {
-                printf(BUILTIN_ERROR, input);
+                printf(BUILTIN_ERROR, "Cannot go to home");
                 return;
             }
 
@@ -475,7 +537,7 @@ void execute(char *home, char *cwd, char *input, char **command, int in, int out
             {
                 if (chdir(getenv("OLDPWD")) == -1)
                 {
-                    printf(BUILTIN_ERROR, input);
+                    printf(BUILTIN_ERROR, "Cannot go to OLDPWD");
                     return;
                 }
 
@@ -490,13 +552,13 @@ void execute(char *home, char *cwd, char *input, char **command, int in, int out
             {
                 if (setenv("OLDPWD", getenv("PWD"), 1) == -1)
                 {
-                    printf(BUILTIN_ERROR, input);
+                    printf(BUILTIN_ERROR, "Cannot set OLDPWD");
                     return;
                 }
 
                 if (chdir(".") == -1)
                 {
-                    printf(BUILTIN_ERROR, input);
+                    printf(BUILTIN_ERROR, "Cannot go to current dir");
                     return;
                 }
 
@@ -511,13 +573,13 @@ void execute(char *home, char *cwd, char *input, char **command, int in, int out
             {
                 if (setenv("OLDPWD", getenv("PWD"), 1) == -1)
                 {
-                    printf(BUILTIN_ERROR, input);
+                    printf(BUILTIN_ERROR, "Cannot set OLDPWD");
                     return;
                 }
 
                 if (chdir("..") == -1)
                 {
-                    printf(BUILTIN_ERROR, input);
+                    printf(BUILTIN_ERROR, "Cannot go to previous dir");
                     return;
                 }
 
@@ -531,13 +593,13 @@ void execute(char *home, char *cwd, char *input, char **command, int in, int out
             {
                 if (setenv("OLDPWD", getenv("PWD"), 1) == -1)
                 {
-                    printf(BUILTIN_ERROR, input);
+                    printf(BUILTIN_ERROR, "Cannot set OLDPWD");
                     return;
                 }
 
                 if (chdir(command[1]) == -1)
                 {
-                    printf(BUILTIN_ERROR, input);
+                    printf(BUILTIN_ERROR, "Cannot go to given dir");
                     return;
                 }
 
@@ -579,7 +641,7 @@ void execute(char *home, char *cwd, char *input, char **command, int in, int out
             exit(EXIT_FAILURE);
         }
 
-        if (builtin_execvp(home, cwd, input, command) == -1)
+        if (builtin_execvp(home, cwd, command) == -1)
         {
             exit(EXIT_FAILURE);
         }
@@ -606,26 +668,32 @@ void execute(char *home, char *cwd, char *input, char **command, int in, int out
             exit(EXIT_FAILURE);
         }
 
-        if (child_kill == 1)
+        if (child_wait == 1)
         {
             do
             {
-                pid = wait(&child_status); //wait for child
+                if ((pid = wait(&child_status)) == -1) //waitpid(pid, &status, WEXITSTATUS(child_status));
+                {
+                    if (errno != ECHILD)
+                    {
+                        printf(EXEC_ERROR, "Unblocked Signal Caught");
+                        exit(EXIT_FAILURE);
+                    }
+                    break;
+                }
 
                 if (pid != child_pid) //if parent has more than one child
                 {
-                    debug("NOOOOO %s", "Sad");
-                    //kill all child
+                    //handle background processes TODO
                 }
             } while (pid != child_pid);
-
         }
     }
 
     return;
 }
 
-int builtin_execvp(char *home, char *cwd, char *input, char *command[])
+int builtin_execvp(char *home, char *cwd, char *command[])
 {
     if (command[0] == NULL)
     {
@@ -645,7 +713,7 @@ int builtin_execvp(char *home, char *cwd, char *input, char *command[])
     {
         if ((cwd = my_getcwd()) == 0)
         {
-            printf(BUILTIN_ERROR, input);
+            printf(BUILTIN_ERROR, "Cannot get PWD");
             return -1;
         }
 
@@ -667,12 +735,176 @@ int builtin_execvp(char *home, char *cwd, char *input, char *command[])
     return 0;
 }
 
+int syntax_checker_helper(char *input)
+{
+    int j = 0; //no more than one '>' each
+    int k = 0; //no more than one '<' each
+    char *tmp; //for checking j, k
+
+    tmp = input;
+    while ((tmp = strchr(tmp, '>')) != NULL)
+    {
+        j++;
+        tmp = tmp + 1;
+    }
+
+    if (j > 1)
+    {
+        return -1;
+    }
+
+    tmp = input;
+    while ((tmp = strchr(tmp, '<')) != NULL)
+    {
+        k++;
+        tmp = tmp + 1;
+    }
+
+    if (k > 1)
+    {
+        return -1;
+    }
+
+    return 0;
+}
+
 int syntax_checker(char *input)
 {
     //check either side of | > <
     //check consecutive | > <
     //check argument
     //check filenames & argument
+    char *a[MAX_TOKEN];
+    char *b[MAX_TOKEN];
+    char *c[MAX_TOKEN];
+    char *d[MAX_TOKEN];
+
+    char *temp;
+
+    int a_count = 0;
+    int af_count = 0;
+    int as_count = 0;
+    int b_count = 0;
+    int bf_count = 0;
+    int bs_count = 0;
+    int c_count = 0;
+    int cf_count = 0;
+    int cs_count = 0;
+    int d_count = 0;
+
+    temp = input;
+    while ((temp = strchr(temp, '|')) != NULL)
+    {
+        af_count++;
+        temp = temp + 1;
+    }
+
+    a[a_count] = strtok_r(input, "|", &input); //chopping input with 'pipe'
+    if (a[a_count] == NULL) //return null only when token has only delimiter or NULL
+    {
+        return -1;
+    }
+    while (a[a_count] != NULL)
+    {
+        as_count++;
+        a_count++;
+        a[a_count] = strtok_r(NULL, "|", &input);
+        if (a[a_count] == NULL)
+        {
+            break;
+        }
+    }
+
+    if ((af_count != as_count - 1) && af_count != 0)
+    {
+        return -1;
+    }
+
+    for (int i = 0; i < a_count; ++i) //chopping 'pipe-chopped' input with 'out'
+    {
+        if (syntax_checker_helper(a[i]) == -1)
+        {
+            return -1;
+        }
+
+        temp = a[i];
+        bf_count = 0;
+        bs_count = 0;
+        while ((temp = strchr(temp, '>')) != NULL)
+        {
+            bf_count++;
+            temp = temp + 1;
+        }
+        b[b_count] = strtok_r(a[i], ">", &a[i]);
+        if (b[b_count] == NULL)
+        {
+            return -1;
+        }
+        while (b[b_count] != NULL)
+        {
+            bs_count++;
+            b_count++;
+            b[b_count] = strtok_r(NULL, ">", &a[i]);
+            if (b[b_count] == NULL)
+            {
+                break;
+            }
+        }
+        if ((bf_count != bs_count - 1) && bf_count != 0)
+        {
+            return -1;
+        }
+    }
+
+    for (int i = 0; i < b_count; ++i) //chopping 'pipe-out-chopped' input with 'in'
+    {
+        temp = b[i];
+        cf_count = 0;
+        cs_count = 0;
+        while ((temp = strchr(temp, '<')) != NULL)
+        {
+            cf_count++;
+            temp = temp + 1;
+        }
+        c[c_count] = strtok_r(b[i], "<", &b[i]);
+        if (c[c_count] == NULL)
+        {
+            return -1;
+        }
+        while (c[c_count] != NULL)
+        {
+            cs_count++;
+            c_count++;
+            c[c_count] = strtok_r(NULL, "<", &b[i]);
+            if (c[c_count] == NULL)
+            {
+                break;
+            }
+        }
+        if ((cf_count != cs_count - 1) && cf_count != 0)
+        {
+            return -1;
+        }
+    }
+
+    for (int i = 0; i < c_count; ++i) //chopping 'pipe-out-in-chopped' input with 'whitespace'
+    {
+        d[d_count] = strtok_r(c[i], " \t\r\v\f\n", &c[i]);
+        if (d[d_count] == NULL)
+        {
+            return -1;
+        }
+        while (d[d_count] != NULL)
+        {
+            d_count++;
+            d[d_count] = strtok_r(NULL, " \t\r\v\f\n", &c[i]);
+            if (d[d_count] == NULL)
+            {
+                break;
+            }
+        }
+    }
+
     return 0;
 }
 
