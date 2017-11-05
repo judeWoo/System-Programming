@@ -16,11 +16,14 @@
 #include "sfish.h"
 #include "debug.h"
 
+pid_t pgid_buf[MAX_TOKEN];
+
 char *input_buf[MAX_TOKEN];
 char *outfile_buf[MAX_OUTPUT];
 char *infile_buf[MAX_INPUT];
 
 int child_wait; //flag to wait child
+int pgid_bufc = 0;
 
 sigjmp_buf sigint_buf;
 
@@ -145,8 +148,8 @@ void signal_handle(int signal)
         {
             pid = wait(NULL);
         } while (pid != -1);
-        exit(EXIT_SUCCESS);
-        // siglongjmp(sigint_buf, 1);
+        // exit(EXIT_SUCCESS);
+        siglongjmp(sigint_buf, 1);
     }
 
     else //sigtstp
@@ -629,6 +632,8 @@ void execute(char *home, char *cwd, char **command, int in, int out, int outfile
 
     if ((int) child_pid == 0) //child
     {
+        // setpgid(pid, pgid);
+
         if (dup2(in, STDIN_FILENO) == -1)
         {
             printf(EXEC_ERROR, "NO dup2");
@@ -656,6 +661,8 @@ void execute(char *home, char *cwd, char **command, int in, int out, int outfile
 
     else //parent
     {
+        // tcsetpgrp(out, pgid_buf[pgid_bufc]); //set foreground prcoess's group id
+
         if (dup2(STDIN_FILENO, in) == -1)
         {
             printf(EXEC_ERROR, "NO dup2");
