@@ -1,1 +1,3 @@
-in
+PING google.com (172.217.12.174) 56(84) bytes of data.
+64 bytes from lga25s62-in-f14.1e100.net (172.217.12.174): icmp_seq=1 ttl=128 time=4.92 ms
+64 bytes from lga25s62-in-f14.1e100.net (172.217.12.174): icmp_seq=2 ttl=128 time=6.78 ms
