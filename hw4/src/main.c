@@ -23,6 +23,7 @@ char *outfile_buf[MAX_OUTPUT];
 char *infile_buf[MAX_INPUT];
 
 int child_wait; //flag to wait child
+int be_leader;
 int pgid_bufc = 0;
 
 sigjmp_buf sigint_buf;
@@ -56,9 +57,12 @@ int main(int argc, char *argv[], char *envp[]) {
         exit(EXIT_FAILURE); // Should not happen
     }
     if (sigaction(SIGTSTP, &sa, NULL) == -1) { //Register Sigaction
-        perror("Cannot Handle SIGINT");
+        perror("Cannot Handle SIGTSTP");
         exit(EXIT_FAILURE); // Should not happen
     }
+
+    // init OLDPWD
+    setenv("OLDPWD", "", 1);
 
     while (sigsetjmp(sigint_buf, 1) != 0) //calling sigsetjmp again to return 0;
     {
@@ -77,20 +81,16 @@ int main(int argc, char *argv[], char *envp[]) {
         }
     }
 
-    // init home
-    if ((home = getenv("HOME")) == NULL)
-    {
-        perror("Home directory not set");
-        exit(EXIT_FAILURE);
-    }
-
-    // init OLDPWD
-    setenv("OLDPWD", "", 1);
-
     do
     {
+        // init home
+        if ((home = getenv("HOME")) == NULL)
+        {
+            perror("Home directory not set");
+            exit(EXIT_FAILURE);
+        }
         //init sizes
-        input_bufc = outfile_bufc = infile_bufc = child_wait = 0;
+        input_bufc = outfile_bufc = infile_bufc = child_wait = be_leader = 0;
         //init cwd
         cwd = init_cwd(home, cwd);
         //init input
@@ -624,6 +624,11 @@ void execute(char *home, char *cwd, char **command, int in, int out, int outfile
         out = open(outfile_buf[outfile_bufc], O_WRONLY | O_TRUNC | O_CREAT, S_IRUSR | S_IRGRP | S_IWGRP | S_IWUSR);
     }
 
+    if (be_leader == 0)
+    {
+        pgid_bufc++;
+    }
+
     if ((child_pid = fork()) == -1) //fork
     {
         printf(EXEC_ERROR, "NO fork");
@@ -632,7 +637,28 @@ void execute(char *home, char *cwd, char **command, int in, int out, int outfile
 
     if ((int) child_pid == 0) //child
     {
-        // setpgid(pid, pgid);
+        // if (be_leader == 0) //sets itself as a group leader
+        // {
+        //     pid = getpid();
+        //     if (setpgid(pid, pid) == -1)
+        //     {
+        //         perror("Cannot set pgid for leading child in child");
+        //         exit(EXIT_FAILURE);
+        //     }
+        //     be_leader = 1;
+        //     pgid_buf[pgid_bufc] = pid;
+        //     debug("The old master's pid: %d, pgid: %d", pid, getpgid(pid));
+        // }
+        // else //follow the trail
+        // {
+        //     pid = getpid();
+        //     if (setpgid(pid, pgid_buf[pgid_bufc - 1]) == -1)
+        //     {
+        //         perror("Cannot set pgid for following child in child");
+        //         exit(EXIT_FAILURE);
+        //     }
+        //     debug("The young padawan's pid: %d, pgid: %d", pid, getpgid(pid));
+        // }
 
         if (dup2(in, STDIN_FILENO) == -1)
         {
@@ -661,7 +687,26 @@ void execute(char *home, char *cwd, char **command, int in, int out, int outfile
 
     else //parent
     {
-        // tcsetpgrp(out, pgid_buf[pgid_bufc]); //set foreground prcoess's group id
+        // if (be_leader == 0) //set's the first child as a group leader
+        // {
+        //     if (setpgid(child_pid, child_pid) == -1)
+        //     {
+        //         perror("Cannot set pgid for leading child in parent");
+        //         exit(EXIT_FAILURE);
+        //     }
+        //     pgid_buf[pgid_bufc] = child_pid;
+        //     be_leader = 1;
+        //     debug("The old child's pid: %d, pgid: %d", child_pid, getpgid(child_pid));
+        // }
+        // else
+        // {
+        //     if (setpgid(child_pid, pgid_buf[pgid_bufc - 1]) == -1)
+        //     {
+        //         perror("Cannot set pgid for following child in parent");
+        //         exit(EXIT_FAILURE);
+        //     }
+        //     debug("The young child's pid: %d, pgid: %d", child_pid, getpgid(child_pid));
+        // }
 
         if (dup2(STDIN_FILENO, in) == -1)
         {
