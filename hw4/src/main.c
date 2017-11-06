@@ -98,10 +98,10 @@ int main(int argc, char *argv[], char *envp[]) {
         //init to parse
         free(cwd);
 
-        write(1, "\e[s", strlen("\e[s")); //TODO
-        write(1, "\e[20;10H", strlen("\e[20;10H"));
-        write(1, "SomeText", strlen("SomeText"));
-        write(1, "\e[u", strlen("\e[u"));
+        // write(1, "\e[s", strlen("\e[s")); //TODO
+        // write(1, "\e[20;10H", strlen("\e[20;10H"));
+        // write(1, "SomeText", strlen("SomeText"));
+        // write(1, "\e[u", strlen("\e[u"));
 
         // If EOF is read (aka ^D) readline returns NULL
         if (input == NULL)
@@ -113,7 +113,7 @@ int main(int argc, char *argv[], char *envp[]) {
 
         add_history(input_holder);
 
-        if (syntax_checker(input_holder) == -1) //TODO
+        if (syntax_checker(input_holder) == -1)
         {
             printf(SYNTAX_ERROR, "SYNTAX_ERROR");
             goto free;
