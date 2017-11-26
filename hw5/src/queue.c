@@ -5,7 +5,7 @@
 queue_t *create_queue(void) {
     queue_t *queue;
 
-    if ((queue = calloc(1, sizeof(queue_t))) == NULL)
+    if ((queue = (queue_t *) calloc(1, sizeof(queue_t))) == NULL)
     {
         perror("calloc failed");
         exit(EXIT_FAILURE);
@@ -51,11 +51,11 @@ bool invalidate_queue(queue_t *self, item_destructor_f destroy_function) {
 
     if (indicator->next == NULL) //if only one node in queue
     {
-        if (sem_wait(&(self->items)) != 0) //down semaphore
-        {
-            perror("sem_wait failed");
-            exit(EXIT_FAILURE);
-        }
+        // if (sem_wait(&(self->items)) != 0) //down semaphore
+        // {
+        //     perror("sem_wait failed");
+        //     exit(EXIT_FAILURE);
+        // }
         destroy_function(indicator->item);
     }
 
@@ -63,22 +63,22 @@ bool invalidate_queue(queue_t *self, item_destructor_f destroy_function) {
     {
         while (indicator->next != NULL) //if multiple nodes in queue
         {
-            if (sem_wait(&(self->items)) != 0) //down semaphore
-            {
-                perror("sem_wait failed");
-                exit(EXIT_FAILURE);
-            }
+            // if (sem_wait(&(self->items)) != 0) //down semaphore
+            // {
+            //     perror("sem_wait failed");
+            //     exit(EXIT_FAILURE);
+            // }
             destroy_function(indicator->item);
 
             indicator = indicator->next;
 
             if (indicator == NULL) //if last node in queue
             {
-                if (sem_wait(&(self->items)) != 0) //down semaphore
-                {
-                    perror("sem_wait failed");
-                    exit(EXIT_FAILURE);
-                }
+                // if (sem_wait(&(self->items)) != 0) //down semaphore
+                // {
+                //     perror("sem_wait failed");
+                //     exit(EXIT_FAILURE);
+                // }
                 destroy_function(indicator->item);
                 break;
             }
@@ -116,7 +116,7 @@ bool enqueue(queue_t *self, void *item) {
 
     if (indicator == NULL) //nothing in the queue
     {
-        if ((indicator = calloc(1, sizeof(queue_node_t))) == NULL)
+        if ((indicator = (queue_node_t *) calloc(1, sizeof(queue_node_t))) == NULL)
         {
             perror("calloc failed");
             exit(EXIT_FAILURE);
@@ -163,15 +163,15 @@ bool enqueue(queue_t *self, void *item) {
         }
     }
 
-    if (sem_post(&(self->items)) != 0) //up semaphore
-    {
-        perror("sem_post failed");
-        exit(EXIT_FAILURE);
-    }
-
     if (pthread_mutex_unlock(&(self->lock)) != 0) //end critical region
     {
         perror("pthread_mutex_lock failed");
+        exit(EXIT_FAILURE);
+    }
+
+    if (sem_post(&(self->items)) != 0) //up semaphore
+    {
+        perror("sem_post failed");
         exit(EXIT_FAILURE);
     }
 
@@ -193,6 +193,12 @@ void *dequeue(queue_t *self) {
         return(false);
     }
 
+    if (sem_wait(&(self->items)) != 0) //down semaphore
+    {
+        perror("sem_wait failed");
+        exit(EXIT_FAILURE);
+    }
+
     if (pthread_mutex_lock(&(self->lock)) != 0) //start critical region
     {
         perror("pthread_mutex_lock failed");
@@ -202,12 +208,6 @@ void *dequeue(queue_t *self) {
     indicator = self->front;
     self->front = indicator->next; //TODO
     free(indicator);
-
-    if (sem_wait(&(self->items)) != 0) //down semaphore
-    {
-        perror("sem_wait failed");
-        exit(EXIT_FAILURE);
-    }
 
     if (pthread_mutex_unlock(&(self->lock)) != 0) //end critical region
     {
