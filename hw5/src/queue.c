@@ -124,6 +124,7 @@ bool enqueue(queue_t *self, void *item) {
         indicator->item = item;
         indicator->next = NULL;
         self->rear = indicator; //front == rear
+        self->front = indicator; //front == rear
     }
 
     else //something in the queue
@@ -180,17 +181,18 @@ bool enqueue(queue_t *self, void *item) {
 
 void *dequeue(queue_t *self) {
     queue_node_t *indicator;
+    void *item;
 
     if (self == NULL)
     {
         errno = EINVAL;
-        return(false);
+        return(NULL);
     }
 
     if (self->front == NULL || self->rear == NULL) //empty queue
     {
         errno = EINVAL;
-        return(false);
+        return(NULL);
     }
 
     if (sem_wait(&(self->items)) != 0) //down semaphore
@@ -206,6 +208,7 @@ void *dequeue(queue_t *self) {
     }
 
     indicator = self->front;
+    item = indicator->item;
     self->front = indicator->next; //TODO
     free(indicator);
 
@@ -215,5 +218,5 @@ void *dequeue(queue_t *self) {
         exit(EXIT_FAILURE);
     }
 
-    return indicator;
+    return item;
 }
