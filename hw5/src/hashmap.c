@@ -2,7 +2,6 @@
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
-// #include <debug.h>
 
 #define MAP_KEY(base, len) (map_key_t) {.key_base = base, .key_len = len}
 #define MAP_VAL(base, len) (map_val_t) {.val_base = base, .val_len = len}
@@ -477,6 +476,7 @@ map_node_t delete(hashmap_t *self, map_key_t key) {
                 self->nodes[index].val.val_base = NULL;
                 self->nodes[index].val.val_len = 0;
                 self->nodes[index].tombstone = true;
+                self->size--;
                 if (pthread_mutex_unlock(&(self->write_lock)) != 0)
                 {
                     perror("pthread_mutex_unlock failed");
@@ -544,6 +544,7 @@ map_node_t delete(hashmap_t *self, map_key_t key) {
                         self->nodes[index].val.val_base = NULL;
                         self->nodes[index].val.val_len = 0;
                         self->nodes[index].tombstone = true;
+                        self->size--;
                         if (pthread_mutex_unlock(&(self->write_lock)) != 0)
                         {
                             perror("pthread_mutex_unlock failed");

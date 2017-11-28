@@ -1,6 +1,7 @@
 #include "queue.h"
 #include <errno.h>
 #include <stdio.h>
+#include "debug.h"
 
 queue_t *create_queue(void) {
     queue_t *queue;
@@ -131,7 +132,6 @@ bool enqueue(queue_t *self, void *item) {
     {
         if (indicator->next == NULL) //if only one node in queue
         {
-            next_indicator = indicator->next; //TODO
             if ((next_indicator = calloc(1, sizeof(queue_node_t))) == NULL)
             {
                 perror("calloc failed");
@@ -140,6 +140,7 @@ bool enqueue(queue_t *self, void *item) {
             next_indicator->item = item;
             next_indicator->next = NULL;
             self->rear = next_indicator; //update rear
+            indicator->next = next_indicator;
         }
 
         else //if multiple node in queue

@@ -1,6 +1,7 @@
 #include "client.h"
 #include "cream.h"
 #include "csapp.h"
+#include "debug.h"
 
 int main(int argc, char **argv) {
     args_t *args;
