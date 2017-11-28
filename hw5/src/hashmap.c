@@ -2,6 +2,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
+#include "debug.h"
 
 #define MAP_KEY(base, len) (map_key_t) {.key_base = base, .key_len = len}
 #define MAP_VAL(base, len) (map_val_t) {.val_base = base, .val_len = len}
@@ -107,7 +108,6 @@ bool put(hashmap_t *self, map_key_t key, map_val_t val, bool force) {
         self->nodes[index].key = key; //put elements
         self->nodes[index].val = val;
         self->nodes[index].tombstone = false;
-        self->size++;
         /* Writing ends */
         /* Critical section ends */
         if (pthread_mutex_unlock(&(self->write_lock)) != 0)
@@ -154,7 +154,6 @@ bool put(hashmap_t *self, map_key_t key, map_val_t val, bool force) {
                     self->nodes[index].key = key; //put elements
                     self->nodes[index].val = val;
                     self->nodes[index].tombstone = false;
-                    self->size++;
                     if (pthread_mutex_unlock(&(self->write_lock)) != 0)
                     {
                         perror("pthread_mutex_unlock failed");
@@ -618,7 +617,6 @@ bool clear_map(hashmap_t *self) {
         /* Critical section ends */
         return true;
     }
-    // debug("Deleted node: %d, Actual size:%d", indicator, self->size);
     if (pthread_mutex_unlock(&(self->write_lock)) != 0)
     {
         perror("pthread_mutex_unlock failed");
@@ -696,7 +694,6 @@ bool invalidate_map(hashmap_t *self) {
         /* Critical section ends */
         return true;
     }
-    // debug("Deleted node: %d, Actual size:%d", indicator, self->size);
     if (pthread_mutex_unlock(&(self->write_lock)) != 0)
     {
         perror("pthread_mutex_unlock failed");

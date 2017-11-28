@@ -2,6 +2,7 @@
 #include "utils.h"
 #include "csapp.h"
 #include "server.h"
+#include "debug.h"
 
 queue_t *queue;
 hashmap_t *hashmap;
@@ -259,43 +260,46 @@ void *thread(void *vargp)
 {
     int connfd;
     int *connfdp;
-    /* Decrease # of fd */
-    if (sem_wait(&(fds)) != 0) //down semaphore
-    {
-        perror("sem_wait failed");
-        exit(EXIT_FAILURE);
-    }
 
-    /* Make threads live for the lifetime of the program */
-    Pthread_detach(pthread_self());
+    while (1)
+    {
+        /* Decrease # of fd */
+        if (sem_wait(&(fds)) != 0) //down semaphore
+        {
+            perror("sem_wait failed");
+            exit(EXIT_FAILURE);
+        }
 
-    /* Lock */
-    if (pthread_mutex_lock(&(lock)) != 0)
-    {
-        perror("pthread_mutex_lock failed");
-        exit(EXIT_FAILURE);
-    }
-    /* Get file descriptor */
-    connfdp = (int *) dequeue(queue);
-    /* Unlock */
-    if (pthread_mutex_unlock(&(lock)) != 0)
-    {
-        perror("pthread_mutex_unlock failed");
-        exit(EXIT_FAILURE);
-    }
-    if (connfdp == NULL)
-    {
-        perror("queued item is invalid nah..");
-        exit(EXIT_FAILURE);
-    }
-    connfd = *connfdp;
+        /* Make threads live for the lifetime of the program */
+        Pthread_detach(pthread_self());
 
-    /* Response */
-    handle_request(connfd);
-    /* Free */
-    Free(connfdp);
-    /* Close */
-    Close(connfd);
+        /* Lock */
+        if (pthread_mutex_lock(&(lock)) != 0)
+        {
+            perror("pthread_mutex_lock failed");
+            exit(EXIT_FAILURE);
+        }
+        /* Get file descriptor */
+        connfdp = (int *) dequeue(queue);
+        /* Unlock */
+        if (pthread_mutex_unlock(&(lock)) != 0)
+        {
+            perror("pthread_mutex_unlock failed");
+            exit(EXIT_FAILURE);
+        }
+        if (connfdp == NULL)
+        {
+            perror("queued item is invalid nah..");
+            exit(EXIT_FAILURE);
+        }
+        connfd = *connfdp;
+        /* Response */
+        handle_request(connfd);
+        /* Free */
+        Free(connfdp);
+        /* Close */
+        Close(connfd);
+    }
 
     return NULL;
 }
