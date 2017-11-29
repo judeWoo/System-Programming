@@ -252,17 +252,18 @@ void *thread(void *vargp)
     int connfd;
     int *connfdp;
 
+    /* Make threads live for the lifetime of the program */
+    Pthread_detach(pthread_self());
+
     while (1)
     {
+        debug("Howdie");
         /* Decrease # of fd */
         if (sem_wait(&(fds)) != 0) //down semaphore
         {
             perror("sem_wait failed");
             exit(EXIT_FAILURE);
         }
-
-        /* Make threads live for the lifetime of the program */
-        Pthread_detach(pthread_self());
 
         /* Lock */
         if (pthread_mutex_lock(&(lock)) != 0)
