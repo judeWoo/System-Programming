@@ -166,7 +166,7 @@ bool put(hashmap_t *self, map_key_t key, map_val_t val, bool force) {
                 self->nodes[old_index].key = key; //put elements
                 self->nodes[old_index].val = val;
                 self->nodes[old_index].tombstone = false;
-                self->nodes[old_index].num_used = 1; //lru updated to 1 (default)
+                self->nodes[old_index].num_used++; //lru updated
                 if(time(&(self->nodes[index].created_time)) == -1) //ttl updated to current time (default)
                 {
                     perror("time() failed");
@@ -226,7 +226,7 @@ bool put(hashmap_t *self, map_key_t key, map_val_t val, bool force) {
                     self->nodes[index].key = key; //put elements
                     self->nodes[index].val = val;
                     self->nodes[index].tombstone = false;
-                    self->nodes[index].num_used = 1; //lru updated to 1 (default)
+                    self->nodes[index].num_used++; //lru updated
                     if(time(&(self->nodes[index].created_time)) == -1) //ttl updated to current time (default)
                     {
                         perror("time() failed");
