@@ -257,7 +257,6 @@ void *thread(void *vargp)
 
     while (1)
     {
-        debug("Howdie");
         /* Decrease # of fd */
         if (sem_wait(&(fds)) != 0) //down semaphore
         {
