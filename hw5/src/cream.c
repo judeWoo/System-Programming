@@ -140,8 +140,6 @@ int handle_request(int connfd)
         case PUT:
             if ((request_header.key_size <= 0) || (request_header.value_size <= 0))
             {
-                printf("put request failed with key_size of %d, and value_size of %d\n",
-                request_header.key_size, request_header.value_size);
                 return 0;
             }
             key = Malloc(request_header.key_size);
@@ -153,7 +151,6 @@ int handle_request(int connfd)
         case GET:
             if (request_header.key_size <= 0)
             {
-                printf("get request failed with key_size of %d\n", request_header.key_size);
                 return 0;
             }
             key = Malloc(request_header.key_size);
@@ -163,7 +160,6 @@ int handle_request(int connfd)
         case EVICT:
             if (request_header.key_size <= 0)
             {
-                printf("evict request failed with key_size of %d\n", request_header.key_size);
                 return 0;
             }
             key = Malloc(request_header.key_size);
@@ -174,8 +170,6 @@ int handle_request(int connfd)
             handle_clear(connfd);
             break;
         default:
-            printf("invalid request failed with request code of %d, and value_size of %d\n",
-            request_header.request_code, request_header.value_size);
             response_header = (response_header_t) {UNSUPPORTED, 0};
             Rio_writen(connfd, &response_header, sizeof(response_header));
             return 0;
@@ -195,7 +189,6 @@ int handle_put(int connfd, void *key, void *value)
 
     if(!put(hashmap, map_key, map_value, true))
     {
-        printf("put request failed\n");
         response_header = (response_header_t) {BAD_REQUEST, 0};
         Rio_writen(connfd, &response_header, sizeof(response_header));
         return 0;
@@ -216,7 +209,6 @@ int handle_get(int connfd, void *key)
 
     if((map_value.val_base) == NULL)
     {
-        printf("get request failed\n");
         response_header = (response_header_t) {NOT_FOUND, 0};
         Rio_writen(connfd, &response_header, sizeof(response_header));
         return 0;
@@ -245,7 +237,6 @@ int handle_clear(int connfd)
 
     if(!clear_map(hashmap))
     {
-        printf("clear request failed\n");
         response_header = (response_header_t) {BAD_REQUEST, 0};
         Rio_writen(connfd, &response_header, sizeof(response_header));
         return 0;
