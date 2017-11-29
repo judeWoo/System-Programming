@@ -12,6 +12,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include "const.h"
+#include <time.h>
 
 typedef struct map_key_t {
     void *key_base;
@@ -29,6 +30,8 @@ typedef void (*destructor_f)(map_key_t, map_val_t);
 typedef struct map_node_t {
     map_key_t key;
     map_val_t val;
+    int num_used;
+    time_t created_time;
     bool tombstone;
 } map_node_t;
 
