@@ -81,8 +81,8 @@ int server_init(args_t *args)
     int listenfd, *connfdp;
     socklen_t clientlen;
     struct sockaddr_storage clientaddr;
-    uint64_t number_workers = (uint64_t) atoi(args->num_workers);
-    uint64_t maximum_entries = (uint64_t) atoi(args->max_entries);
+    uint32_t number_workers = (uint32_t) atoi(args->num_workers);
+    uint32_t maximum_entries = (uint32_t) atoi(args->max_entries);
     pthread_t tid[number_workers];
 
     /* Init a queue */
@@ -92,7 +92,7 @@ int server_init(args_t *args)
     hashmap = create_map(maximum_entries, jenkins_one_at_a_time_hash, map_free_function);
 
     /* Create threads */
-    for (uint64_t i = 0; i < number_workers; ++i)
+    for (uint32_t i = 0; i < number_workers; ++i)
     {
         Pthread_create(&tid[i], NULL, thread, NULL);
     }

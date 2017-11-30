@@ -5,6 +5,6 @@
 #ifndef CONST_H
 #define CONST_H
 
-#define TTL 5
+#define TTL 10000
 
 #endif
