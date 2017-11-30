@@ -6,6 +6,7 @@
 
 hashmap_t *create_map(uint32_t capacity, hash_func_f hash_function, destructor_f destroy_function) {
     hashmap_t *myhashmap;
+    map_node_t *mynodes;
 
     if ((capacity <= 0) || (hash_function == NULL) || (destroy_function == NULL))
     {
@@ -23,7 +24,7 @@ hashmap_t *create_map(uint32_t capacity, hash_func_f hash_function, destructor_f
     }
 
     myhashmap->capacity = capacity;
-    myhashmap->size = 0;
+    myhashmap->size = (uint32_t) 0;
     myhashmap->hash_function = hash_function;
     myhashmap->destroy_function = destroy_function;
     myhashmap->num_readers = 0;
@@ -38,17 +39,29 @@ hashmap_t *create_map(uint32_t capacity, hash_func_f hash_function, destructor_f
         return NULL;
     }
     myhashmap->invalid = false;
+    /* Init nodes */
+    mynodes = myhashmap->nodes;
+    for (uint32_t i = (uint32_t) 0; i < myhashmap->capacity; ++i)
+    {
+        mynodes[i].key.key_base = NULL;
+        mynodes[i].key.key_len = 0;
+        mynodes[i].val.val_base = NULL;
+        mynodes[i].val.val_len = 0;
+        mynodes[i].tombstone = false;
+        mynodes[i].num_used = 0;
+        mynodes[i].created_time = -1;
+    }
 
     return myhashmap;
 }
 /* This is Writer */
 bool put(hashmap_t *self, map_key_t key, map_val_t val, bool force) {
     time_t current_time;
-    int index; //mapped index
-    int index_finder;
-    int old_index; //least used node
-    int new_index; //traverser
-    int minimum; //least used node's number
+    uint32_t index; //mapped index
+    uint32_t index_finder;
+    uint32_t old_index; //least used node
+    uint32_t new_index; //traverser
+    int maximum; //least used node's number
 
     if (self == NULL)
     {
@@ -121,17 +134,20 @@ bool put(hashmap_t *self, map_key_t key, map_val_t val, bool force) {
         index_finder = index;
         while (1)
         {
-            if (difftime(current_time, self->nodes[index_finder].created_time) >= TTL)
+            if (self->nodes[index_finder].key.key_base != NULL)
             {
-                old_index = index_finder; //if found, insert
-                goto insert;
+                if (difftime(current_time, self->nodes[index_finder].created_time) >= TTL)
+                {
+                    old_index = index_finder; //if found, insert
+                    goto insert;
+                }
             }
 
             index_finder++;
 
             if (index_finder == self->capacity)
             {
-                index_finder = 0; //go back from the start
+                index_finder = (uint32_t) 0; //go back from the start
             }
 
             if (index_finder == index)
@@ -143,21 +159,21 @@ bool put(hashmap_t *self, map_key_t key, map_val_t val, bool force) {
         /* Init others */
         new_index = index;
         old_index = index;
-        minimum = self->nodes[new_index].num_used;
+        maximum = self->nodes[new_index].num_used;
         /* Traverse the entire hashmap */
         while (1)
         {
-            if (self->nodes[new_index].num_used < minimum) //minimum found
+            if (maximum < self->nodes[new_index].num_used) //maximum found
             {
-                minimum = self->nodes[new_index].num_used;
+                maximum = self->nodes[new_index].num_used;
                 old_index = new_index;
             }
 
-            new_index++; //minimum not found
+            new_index++; //maximum not found
 
             if (new_index >= self->capacity)
             {
-                new_index = 0; //start from beginning
+                new_index = (uint32_t) 0; //start from beginning
             }
 
             if (new_index == index) //if came back to start
@@ -166,13 +182,21 @@ bool put(hashmap_t *self, map_key_t key, map_val_t val, bool force) {
                 self->nodes[old_index].key = key; //put elements
                 self->nodes[old_index].val = val;
                 self->nodes[old_index].tombstone = false;
-                self->nodes[old_index].num_used++; //lru updated
-                if(time(&(self->nodes[index].created_time)) == -1) //ttl updated to current time (default)
+                self->nodes[old_index].num_used = 1; //lru updated
+                if(time(&(self->nodes[old_index].created_time)) == -1) //ttl updated to current time (default)
                 {
                     perror("time() failed");
                     exit(EXIT_FAILURE);
                 }
                 break;
+            }
+        }
+        /* +1 on every other elements in array */
+        for (uint32_t i = (uint32_t) 0; i < self->capacity; ++i)
+        {
+            if ((self->nodes[i].key.key_base != NULL) && (i != old_index))
+            {
+                self->nodes[i].num_used++;
             }
         }
         /* Writing ends */
@@ -197,6 +221,14 @@ bool put(hashmap_t *self, map_key_t key, map_val_t val, bool force) {
             self->nodes[index].val = val;
             self->nodes[index].tombstone = false;
             self->nodes[index].num_used = 1; //lru updated to 1 (default)
+            /* +1 on every other elements in array */
+            for (uint32_t i = (uint32_t) 0; i < self->capacity; ++i)
+            {
+                if ((self->nodes[i].key.key_base != NULL) && (i != index))
+                {
+                    self->nodes[i].num_used++;
+                }
+            }
             if(time(&(self->nodes[index].created_time)) == -1) //ttl updated to current time (default)
             {
                 perror("time() failed");
@@ -226,7 +258,15 @@ bool put(hashmap_t *self, map_key_t key, map_val_t val, bool force) {
                     self->nodes[index].key = key; //put elements
                     self->nodes[index].val = val;
                     self->nodes[index].tombstone = false;
-                    self->nodes[index].num_used++; //lru updated
+                    self->nodes[index].num_used = 1; //lru updated
+                    /* +1 on every other elements in array */
+                    for (uint32_t i = (uint32_t) 0; i < self->capacity; ++i)
+                    {
+                        if ((self->nodes[i].key.key_base != NULL) && (i != index))
+                        {
+                            self->nodes[i].num_used++;
+                        }
+                    }
                     if(time(&(self->nodes[index].created_time)) == -1) //ttl updated to current time (default)
                     {
                         perror("time() failed");
@@ -258,6 +298,14 @@ bool put(hashmap_t *self, map_key_t key, map_val_t val, bool force) {
                 self->nodes[index].val = val;
                 self->nodes[index].tombstone = false;
                 self->nodes[index].num_used = 1; //lru updated to 1 (default)
+                /* +1 on every other elements in array */
+                for (uint32_t i = (uint32_t) 0; i < self->capacity; ++i)
+                {
+                    if ((self->nodes[i].key.key_base != NULL) && (i != index))
+                    {
+                        self->nodes[i].num_used++;
+                    }
+                }
                 if(time(&(self->nodes[index].created_time)) == -1) //ttl updated to current time (default)
                 {
                     perror("time() failed");
@@ -281,8 +329,8 @@ bool put(hashmap_t *self, map_key_t key, map_val_t val, bool force) {
 /* This is Reader */
 map_val_t get(hashmap_t *self, map_key_t key) {
     time_t current_time;
-    int index;
-    int new_index;
+    uint32_t index;
+    uint32_t new_index;
 
     if ((self == NULL) || (key.key_base == NULL) || (key.key_len <= 0))
     {
@@ -403,7 +451,15 @@ map_val_t get(hashmap_t *self, map_key_t key) {
                     /* Critical section ends */
                     return MAP_VAL(NULL, 0);
                 }
-                self->nodes[index].num_used++; //increase usage
+                self->nodes[index].num_used = 1; //update priority
+                /* +1 on every other elements in array */
+                for (uint32_t i = (uint32_t) 0; i < self->capacity; ++i)
+                {
+                    if ((self->nodes[i].key.key_base != NULL) && (i != index))
+                    {
+                        self->nodes[i].num_used++;
+                    }
+                }
                 self->num_readers--; //Down the readers
                 if (self->num_readers == 0)
                 {
@@ -513,13 +569,13 @@ map_val_t get(hashmap_t *self, map_key_t key) {
                             perror("time() failed");
                             exit(EXIT_FAILURE);
                         }
-                        if (difftime(current_time, self->nodes[index].created_time) >= TTL) //if expired
+                        if (difftime(current_time, self->nodes[new_index].created_time) >= TTL) //if expired
                         {
-                            self->nodes[index].key.key_base = NULL; //delete key
-                            self->nodes[index].key.key_len = 0;
-                            self->nodes[index].val.val_base = NULL;
-                            self->nodes[index].val.val_len = 0;
-                            self->nodes[index].tombstone = true;
+                            self->nodes[new_index].key.key_base = NULL; //delete key
+                            self->nodes[new_index].key.key_len = 0;
+                            self->nodes[new_index].val.val_base = NULL;
+                            self->nodes[new_index].val.val_len = 0;
+                            self->nodes[new_index].tombstone = true;
                             self->size--;
                             self->num_readers--; //Down the readers
                             if (self->num_readers == 0)
@@ -539,7 +595,15 @@ map_val_t get(hashmap_t *self, map_key_t key) {
                             /* Critical section ends */
                             return MAP_VAL(NULL, 0);
                         }
-                        self->nodes[index].num_used++; //increase usage
+                        self->nodes[new_index].num_used = 1; //update priority
+                        /* +1 on every other elements in array */
+                        for (uint32_t i = (uint32_t) 0; i < self->capacity; ++i)
+                        {
+                            if ((self->nodes[i].key.key_base != NULL) && (i != new_index))
+                            {
+                                self->nodes[i].num_used++;
+                            }
+                        }
                         self->num_readers--; //Down the readers
                         if (self->num_readers == 0)
                         {
@@ -567,8 +631,8 @@ map_val_t get(hashmap_t *self, map_key_t key) {
 }
 
 map_node_t delete(hashmap_t *self, map_key_t key) {
-    int index;
-    int new_index;
+    uint32_t index;
+    uint32_t new_index;
 
     if ((self == NULL) || (key.key_base == NULL) || (key.key_len  <= 0))
     {
@@ -624,6 +688,8 @@ map_node_t delete(hashmap_t *self, map_key_t key) {
                 self->nodes[index].val.val_base = NULL;
                 self->nodes[index].val.val_len = 0;
                 self->nodes[index].tombstone = true;
+                self->nodes[index].num_used = 0;
+                self->nodes[index].created_time = -1;
                 self->size--;
                 if (pthread_mutex_unlock(&(self->write_lock)) != 0)
                 {
@@ -651,7 +717,7 @@ map_node_t delete(hashmap_t *self, map_key_t key) {
                 new_index++;
                 if (new_index == self->capacity)
                 {
-                    new_index = 0; //go back from the start
+                    new_index = (uint32_t) 0; //go back from the start
                 }
                 if (new_index == index) //key not found
                 {
@@ -687,11 +753,13 @@ map_node_t delete(hashmap_t *self, map_key_t key) {
                         {
                             continue;
                         }
-                        self->nodes[index].key.key_base = NULL; //delete key
-                        self->nodes[index].key.key_len = 0;
-                        self->nodes[index].val.val_base = NULL;
-                        self->nodes[index].val.val_len = 0;
-                        self->nodes[index].tombstone = true;
+                        self->nodes[new_index].key.key_base = NULL; //delete key
+                        self->nodes[new_index].key.key_len = 0;
+                        self->nodes[new_index].val.val_base = NULL;
+                        self->nodes[new_index].val.val_len = 0;
+                        self->nodes[new_index].tombstone = true;
+                        self->nodes[new_index].num_used = 0;
+                        self->nodes[new_index].created_time = -1;
                         self->size--;
                         if (pthread_mutex_unlock(&(self->write_lock)) != 0)
                         {
@@ -711,7 +779,7 @@ map_node_t delete(hashmap_t *self, map_key_t key) {
 }
 /* This is Writer */
 bool clear_map(hashmap_t *self) {
-    int indicator;
+    uint32_t indicator;
 
     if (self == NULL)
     {
@@ -743,8 +811,8 @@ bool clear_map(hashmap_t *self) {
     }
     /* Critical section starts */
     /* Writing starts */
-    indicator = 0;
-    for (int i = 0; i < self->capacity; ++i)
+    indicator = (uint32_t) 0;
+    for (uint32_t i = (uint32_t) 0; i < self->capacity; ++i)
     {
         /* Clear */
         if ((self->nodes[i].key.key_base != NULL) || (self->nodes[i].key.key_len > 0)) //not empty node
@@ -756,7 +824,7 @@ bool clear_map(hashmap_t *self) {
 
     if (indicator == self->size)
     {
-        self->size = 0;
+        self->size = (uint32_t) 0;
         if (pthread_mutex_unlock(&(self->write_lock)) != 0)
         {
             perror("pthread_mutex_unlock failed");
@@ -777,7 +845,7 @@ bool clear_map(hashmap_t *self) {
 }
 /* This is Writer */
 bool invalidate_map(hashmap_t *self) {
-    int indicator;
+    uint32_t indicator;
 
     if (self == NULL)
     {
@@ -818,8 +886,8 @@ bool invalidate_map(hashmap_t *self) {
         return true;
     }
 
-    indicator = 0;
-    for (int i = 0; i < self->capacity; ++i)
+    indicator = (uint32_t) 0;
+    for (uint32_t i = (uint32_t) 0; i < self->capacity; ++i)
     {
         /* Clear */
         if ((self->nodes[i].key.key_base != NULL) || (self->nodes[i].key.key_len > 0)) //not empty node

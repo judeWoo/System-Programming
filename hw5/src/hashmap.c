@@ -10,6 +10,7 @@
 
 hashmap_t *create_map(uint32_t capacity, hash_func_f hash_function, destructor_f destroy_function) {
     hashmap_t *myhashmap;
+    map_node_t *mynodes;
 
     if ((capacity <= 0) || (hash_function == NULL) || (destroy_function == NULL))
     {
@@ -25,9 +26,9 @@ hashmap_t *create_map(uint32_t capacity, hash_func_f hash_function, destructor_f
     {
         return NULL;
     }
-
+    /* Init map */
     myhashmap->capacity = capacity;
-    myhashmap->size = 0;
+    myhashmap->size = (uint32_t) 0;
     myhashmap->hash_function = hash_function;
     myhashmap->destroy_function = destroy_function;
     myhashmap->num_readers = 0;
@@ -42,12 +43,22 @@ hashmap_t *create_map(uint32_t capacity, hash_func_f hash_function, destructor_f
         return NULL;
     }
     myhashmap->invalid = false;
+    /* Init nodes */
+    mynodes = myhashmap->nodes;
+    for (uint32_t i = (uint32_t) 0; i < myhashmap->capacity; ++i)
+    {
+        mynodes[i].key.key_base = NULL;
+        mynodes[i].key.key_len = 0;
+        mynodes[i].val.val_base = NULL;
+        mynodes[i].val.val_len = 0;
+        mynodes[i].tombstone = false;
+    }
 
     return myhashmap;
 }
 /* This is Writer */
 bool put(hashmap_t *self, map_key_t key, map_val_t val, bool force) {
-    int index;
+    uint32_t index;
 
     if (self == NULL)
     {
@@ -167,7 +178,7 @@ bool put(hashmap_t *self, map_key_t key, map_val_t val, bool force) {
             index++;
             if (index == self->capacity)
             {
-                index = 0; //go back from the start
+                index = (uint32_t) 0; //go back from the start
             }
 
             if (self->nodes[index].key.key_base == NULL) //found empty node
@@ -196,8 +207,8 @@ bool put(hashmap_t *self, map_key_t key, map_val_t val, bool force) {
 }
 /* This is Reader */
 map_val_t get(hashmap_t *self, map_key_t key) {
-    int index;
-    int new_index;
+    uint32_t index;
+    uint32_t new_index;
 
     if ((self == NULL) || (key.key_base == NULL) || (key.key_len <= 0))
     {
@@ -322,7 +333,7 @@ map_val_t get(hashmap_t *self, map_key_t key) {
                 new_index++;
                 if (new_index == self->capacity)
                 {
-                    new_index = 0; //go back from the start
+                    new_index = (uint32_t) 0; //go back from the start
                 }
                 if (new_index == index) //key not found
                 {
@@ -418,8 +429,8 @@ map_val_t get(hashmap_t *self, map_key_t key) {
 }
 /* This is Writer */
 map_node_t delete(hashmap_t *self, map_key_t key) {
-    int index;
-    int new_index;
+    uint32_t index;
+    uint32_t new_index;
 
     if ((self == NULL) || (key.key_base == NULL) || (key.key_len  <= 0))
     {
@@ -502,7 +513,7 @@ map_node_t delete(hashmap_t *self, map_key_t key) {
                 new_index++;
                 if (new_index == self->capacity)
                 {
-                    new_index = 0; //go back from the start
+                    new_index = (uint32_t) 0; //go back from the start
                 }
                 if (new_index == index) //key not found
                 {
@@ -538,11 +549,11 @@ map_node_t delete(hashmap_t *self, map_key_t key) {
                         {
                             continue;
                         }
-                        self->nodes[index].key.key_base = NULL; //delete key
-                        self->nodes[index].key.key_len = 0;
-                        self->nodes[index].val.val_base = NULL;
-                        self->nodes[index].val.val_len = 0;
-                        self->nodes[index].tombstone = true;
+                        self->nodes[new_index].key.key_base = NULL; //delete key
+                        self->nodes[new_index].key.key_len = 0;
+                        self->nodes[new_index].val.val_base = NULL;
+                        self->nodes[new_index].val.val_len = 0;
+                        self->nodes[new_index].tombstone = true;
                         self->size--;
                         if (pthread_mutex_unlock(&(self->write_lock)) != 0)
                         {
@@ -562,7 +573,7 @@ map_node_t delete(hashmap_t *self, map_key_t key) {
 }
 /* This is Writer */
 bool clear_map(hashmap_t *self) {
-    int indicator;
+    uint32_t indicator;
 
     if (self == NULL)
     {
@@ -594,8 +605,8 @@ bool clear_map(hashmap_t *self) {
     }
     /* Critical section starts */
     /* Writing starts */
-    indicator = 0;
-    for (int i = 0; i < self->capacity; ++i)
+    indicator = (uint32_t) 0;
+    for (uint32_t i = (uint32_t) 0; i < self->capacity; ++i)
     {
         /* Clear */
         if ((self->nodes[i].key.key_base != NULL) || (self->nodes[i].key.key_len > 0)) //not empty node
@@ -607,7 +618,7 @@ bool clear_map(hashmap_t *self) {
 
     if (indicator == self->size)
     {
-        self->size = 0;
+        self->size = (uint32_t) 0;
         if (pthread_mutex_unlock(&(self->write_lock)) != 0)
         {
             perror("pthread_mutex_unlock failed");
@@ -628,7 +639,7 @@ bool clear_map(hashmap_t *self) {
 }
 /* This is Writer */
 bool invalidate_map(hashmap_t *self) {
-    int indicator;
+    uint32_t indicator;
 
     if (self == NULL)
     {
@@ -669,8 +680,8 @@ bool invalidate_map(hashmap_t *self) {
         return true;
     }
 
-    indicator = 0;
-    for (int i = 0; i < self->capacity; ++i)
+    indicator = (uint32_t) 0;
+    for (uint32_t i = (uint32_t) 0; i < self->capacity; ++i)
     {
         /* Clear */
         if ((self->nodes[i].key.key_base != NULL) || (self->nodes[i].key.key_len > 0)) //not empty node
@@ -682,7 +693,7 @@ bool invalidate_map(hashmap_t *self) {
 
     if (indicator == self->size)
     {
-        self->size = 0;
+        self->size = (uint32_t) 0;
         free(self->nodes);
         self->invalid = true;
         if (pthread_mutex_unlock(&(self->write_lock)) != 0)
