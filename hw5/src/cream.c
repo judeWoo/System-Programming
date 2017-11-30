@@ -27,7 +27,6 @@ int main(int argc, char *argv[]) {
     }
     if (pthread_mutex_init(&(lock), NULL) != 0) //setting mutex to NULL
     {
-        errno = EINVAL;
         perror("pthread_mutex_init failed");
         exit(EXIT_FAILURE);
     }
@@ -51,7 +50,6 @@ int main(int argc, char *argv[]) {
     }
     if (pthread_mutex_destroy(&lock) != 0) //setting mutex to NULL
     {
-        errno = EINVAL;
         perror("pthread_mutex_destory failed");
         exit(EXIT_FAILURE);
     }
