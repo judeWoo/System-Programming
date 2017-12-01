@@ -894,6 +894,11 @@ bool invalidate_map(hashmap_t *self) {
         if ((self->nodes[i].key.key_base != NULL) || (self->nodes[i].key.key_len > 0)) //not empty node
         {
             self->destroy_function(self->nodes[i].key, self->nodes[i].val);
+            self->nodes[i].key.key_base = NULL; //delete key
+            self->nodes[i].key.key_len = 0;
+            self->nodes[i].val.val_base = NULL;
+            self->nodes[i].val.val_len = 0;
+            self->nodes[i].tombstone = true;
             indicator++;
         }
     }

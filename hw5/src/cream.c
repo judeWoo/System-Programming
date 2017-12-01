@@ -104,7 +104,7 @@ int server_init(args_t *args)
         clientlen = sizeof(struct sockaddr_storage);
         connfdp = Malloc(sizeof(int));
         *connfdp = Accept(listenfd, (SA *)&clientaddr, &clientlen);
-
+        debug("Server connfdp is %d", *connfdp);
         /* Enqueue */
         if(!enqueue(queue, connfdp))
         {
@@ -281,11 +281,13 @@ void *thread(void *vargp)
             exit(EXIT_FAILURE);
         }
         connfd = *connfdp;
+        debug("The fd is: %d", connfd);
         /* Response */
         handle_request(connfd);
         /* Free */
         Free(connfdp);
         /* Close */
+        debug("closing this:%d", connfd);
         Close(connfd);
     }
 
@@ -294,11 +296,7 @@ void *thread(void *vargp)
 
 /* Used in item destruction */
 void map_free_function(map_key_t key, map_val_t val) {
-    key.key_base = NULL;
-    key.key_len = 0;
     free(key.key_base);
-    val.val_base = NULL;
-    val.val_len = 0;
     free(val.val_base);
 }
 
