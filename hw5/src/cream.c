@@ -270,12 +270,6 @@ void *thread(void *vargp)
         }
         /* Get file descriptor */
         connfdp = (int *) dequeue(queue);
-        /* Unlock */
-        if (pthread_mutex_unlock(&(lock)) != 0)
-        {
-            perror("pthread_mutex_unlock failed");
-            exit(EXIT_FAILURE);
-        }
         if (connfdp == NULL)
         {
             perror("queued item is invalid nah..");
@@ -284,6 +278,12 @@ void *thread(void *vargp)
         connfd = *connfdp;
         /* Response */
         handle_request(connfd);
+        /* Unlock */
+        if (pthread_mutex_unlock(&(lock)) != 0)
+        {
+            perror("pthread_mutex_unlock failed");
+            exit(EXIT_FAILURE);
+        }
         /* Free */
         Free(connfdp);
         /* Close */
