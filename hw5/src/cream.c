@@ -261,7 +261,6 @@ void *thread(void *vargp)
             perror("sem_wait failed");
             exit(EXIT_FAILURE);
         }
-
         /* Lock */
         if (pthread_mutex_lock(&(lock)) != 0)
         {
@@ -270,6 +269,12 @@ void *thread(void *vargp)
         }
         /* Get file descriptor */
         connfdp = (int *) dequeue(queue);
+        /* Unlock */
+        if (pthread_mutex_unlock(&(lock)) != 0)
+        {
+            perror("pthread_mutex_unlock failed");
+            exit(EXIT_FAILURE);
+        }
         if (connfdp == NULL)
         {
             perror("queued item is invalid nah..");
@@ -278,12 +283,6 @@ void *thread(void *vargp)
         connfd = *connfdp;
         /* Response */
         handle_request(connfd);
-        /* Unlock */
-        if (pthread_mutex_unlock(&(lock)) != 0)
-        {
-            perror("pthread_mutex_unlock failed");
-            exit(EXIT_FAILURE);
-        }
         /* Free */
         Free(connfdp);
         /* Close */
@@ -295,7 +294,11 @@ void *thread(void *vargp)
 
 /* Used in item destruction */
 void map_free_function(map_key_t key, map_val_t val) {
+    key.key_base = NULL;
+    key.key_len = 0;
     free(key.key_base);
+    val.val_base = NULL;
+    val.val_len = 0;
     free(val.val_base);
 }
 
