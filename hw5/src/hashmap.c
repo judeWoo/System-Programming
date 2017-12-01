@@ -609,9 +609,10 @@ bool clear_map(hashmap_t *self) {
     for (uint32_t i = (uint32_t) 0; i < self->capacity; ++i)
     {
         /* Clear */
-        if ((self->nodes[i].key.key_base != NULL) || (self->nodes[i].key.key_len > 0)) //not empty node
+        if ((self->nodes[i].key.key_base != NULL) || (self->nodes[i].key.key_len > 0) || (self->nodes[i].val.val_len > 0) || (self->nodes[i].val.val_base != NULL)) //not empty node
         {
             self->destroy_function(self->nodes[i].key, self->nodes[i].val);
+            self->nodes[i].tombstone = true;
             indicator++;
         }
     }
