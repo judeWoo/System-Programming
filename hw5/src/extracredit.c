@@ -633,6 +633,7 @@ map_val_t get(hashmap_t *self, map_key_t key) {
 map_node_t delete(hashmap_t *self, map_key_t key) {
     uint32_t index;
     uint32_t new_index;
+    map_node_t deleted_node;
 
     if ((self == NULL) || (key.key_base == NULL) || (key.key_len  <= 0))
     {
@@ -683,6 +684,13 @@ map_node_t delete(hashmap_t *self, map_key_t key) {
                 {
                     goto search;
                 }
+                deleted_node.key.key_base = self->nodes[index].key.key_base;
+                deleted_node.key.key_len = self->nodes[index].key.key_len;
+                deleted_node.val.val_base = self->nodes[index].val.val_base;
+                deleted_node.val.val_len = self->nodes[index].val.val_len;
+                deleted_node.tombstone = true;
+                deleted_node.num_used = 0;
+                deleted_node.created_time = -1;
                 self->nodes[index].key.key_base = NULL; //delete key
                 self->nodes[index].key.key_len = 0;
                 self->nodes[index].val.val_base = NULL;
@@ -698,7 +706,7 @@ map_node_t delete(hashmap_t *self, map_key_t key) {
                 }
                 /* Writing ends */
                 /* Critical section ends */
-                return self->nodes[index];
+                return deleted_node;
             }
 
             else
@@ -753,6 +761,13 @@ map_node_t delete(hashmap_t *self, map_key_t key) {
                         {
                             continue;
                         }
+                        deleted_node.key.key_base = self->nodes[new_index].key.key_base;
+                        deleted_node.key.key_len = self->nodes[new_index].key.key_len;
+                        deleted_node.val.val_base = self->nodes[new_index].val.val_base;
+                        deleted_node.val.val_len = self->nodes[new_index].val.val_len;
+                        deleted_node.tombstone = true;
+                        deleted_node.num_used = 0;
+                        deleted_node.created_time = -1;
                         self->nodes[new_index].key.key_base = NULL; //delete key
                         self->nodes[new_index].key.key_len = 0;
                         self->nodes[new_index].val.val_base = NULL;
@@ -768,7 +783,7 @@ map_node_t delete(hashmap_t *self, map_key_t key) {
                         }
                         /* Reading ends */
                         /* Critical section ends */
-                        return self->nodes[new_index];
+                        return deleted_node;
                     }
                 }
             }
@@ -818,6 +833,13 @@ bool clear_map(hashmap_t *self) {
         if ((self->nodes[i].key.key_base != NULL) || (self->nodes[i].key.key_len > 0)) //not empty node
         {
             self->destroy_function(self->nodes[i].key, self->nodes[i].val);
+            self->nodes[i].key.key_base = NULL; //delete key
+            self->nodes[i].key.key_len = 0;
+            self->nodes[i].val.val_base = NULL;
+            self->nodes[i].val.val_len = 0;
+            self->nodes[i].tombstone = true;
+            self->nodes[i].num_used = 0;
+            self->nodes[i].created_time = -1;
             self->nodes[i].tombstone = true;
             indicator++;
         }

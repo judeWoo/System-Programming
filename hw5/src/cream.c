@@ -67,7 +67,7 @@ args_t *parse_args(int argc, char **argv) {
         return NULL;
     }
 
-    args_t *args = Malloc(sizeof(args_t));
+    args_t *args = Calloc(1, sizeof(args_t));
     args->num_workers = strdup(argv[1]);
     args->port_number = strdup(argv[2]);
     args->max_entries = strdup(argv[3]);
@@ -102,9 +102,8 @@ int server_init(args_t *args)
     {
         /* Accept */
         clientlen = sizeof(struct sockaddr_storage);
-        connfdp = Malloc(sizeof(int));
+        connfdp = Calloc(1, sizeof(int));
         *connfdp = Accept(listenfd, (SA *)&clientaddr, &clientlen);
-        debug("Server connfdp is %d", *connfdp);
         /* Enqueue */
         if(!enqueue(queue, connfdp))
         {
@@ -128,8 +127,8 @@ int handle_request(int connfd)
     request_header_t request_header;
     response_header_t response_header;
 
-    char *key;
-    char *value;
+    void *key;
+    void *value;
 
     Rio_readn(connfd, &request_header, sizeof(request_header));
 
@@ -140,8 +139,8 @@ int handle_request(int connfd)
             {
                 return 0;
             }
-            key = Malloc(request_header.key_size);
-            value = Malloc(request_header.value_size);
+            key = Calloc(1, request_header.key_size);
+            value = Calloc(1, request_header.value_size);
             Rio_readn(connfd, key, request_header.key_size);
             Rio_readn(connfd, value, request_header.value_size);
             handle_put(connfd, key, value);
@@ -151,7 +150,7 @@ int handle_request(int connfd)
             {
                 return 0;
             }
-            key = Malloc(request_header.key_size);
+            key = Calloc(1, request_header.key_size);
             Rio_readn(connfd, key, request_header.key_size);
             handle_get(connfd, key);
             break;
@@ -160,7 +159,7 @@ int handle_request(int connfd)
             {
                 return 0;
             }
-            key = Malloc(request_header.key_size);
+            key = Calloc(1, request_header.key_size);
             Rio_readn(connfd, key, request_header.key_size);
             handle_evict(connfd, key);
             break;
@@ -184,16 +183,21 @@ int handle_put(int connfd, void *key, void *value)
 
     map_key = (map_key_t) {key, strlen(key)};
     map_value = (map_val_t) {value, strlen(value)};
+    debug("Map_Key's key: %s", (char *) map_key.key_base);
 
     if(!put(hashmap, map_key, map_value, true))
     {
         response_header = (response_header_t) {BAD_REQUEST, 0};
         Rio_writen(connfd, &response_header, sizeof(response_header));
+        debug("this is put");
+        print_map(hashmap);
         return 0;
     }
 
     response_header = (response_header_t) {OK, strlen(value)};
     Rio_writen(connfd, &response_header, sizeof(response_header));
+    debug("this is put");
+    print_map(hashmap);
     return 0;
 }
 int handle_get(int connfd, void *key)
@@ -203,30 +207,42 @@ int handle_get(int connfd, void *key)
     response_header_t response_header;
 
     map_key = (map_key_t) {key, strlen(key)};
+    debug("Map_Key's key: %s", (char *) map_key.key_base);
     map_value = get(hashmap, map_key);
 
     if((map_value.val_base) == NULL)
     {
         response_header = (response_header_t) {NOT_FOUND, 0};
         Rio_writen(connfd, &response_header, sizeof(response_header));
+        debug("this is get");
+        print_map(hashmap);
         return 0;
     }
 
     response_header = (response_header_t) {OK, strlen(map_value.val_base)};
     Rio_writen(connfd, &(response_header), sizeof(response_header));
     Rio_writen(connfd, map_value.val_base, sizeof(map_value.val_base));
+    debug("this is get");
+    print_map(hashmap);
     return 0;
 }
 int handle_evict(int connfd, void *key)
 {
     map_key_t map_key;
     response_header_t response_header;
+    map_node_t deleted_node;
 
     map_key = (map_key_t) {key, strlen(key)};
-    delete(hashmap, map_key);
+    if (((deleted_node = delete(hashmap, map_key)).key.key_base) != NULL)
+    {
+        free(deleted_node.key.key_base);
+        free(deleted_node.val.val_base);
+    }
 
     response_header = (response_header_t) {OK, 0};
     Rio_writen(connfd, &(response_header), sizeof(response_header));
+    debug("this is evict");
+    print_map(hashmap);
     return 0;
 }
 int handle_clear(int connfd)
@@ -237,11 +253,15 @@ int handle_clear(int connfd)
     {
         response_header = (response_header_t) {BAD_REQUEST, 0};
         Rio_writen(connfd, &response_header, sizeof(response_header));
+        debug("this is clear");
+        print_map(hashmap);
         return 0;
     }
 
     response_header = (response_header_t) {OK, 0};
     Rio_writen(connfd, &(response_header), sizeof(response_header));
+    debug("this is clear");
+    print_map(hashmap);
     return 0;
 }
 
@@ -261,33 +281,20 @@ void *thread(void *vargp)
             perror("sem_wait failed");
             exit(EXIT_FAILURE);
         }
-        /* Lock */
-        if (pthread_mutex_lock(&(lock)) != 0)
-        {
-            perror("pthread_mutex_lock failed");
-            exit(EXIT_FAILURE);
-        }
         /* Get file descriptor */
         connfdp = (int *) dequeue(queue);
-        /* Unlock */
-        if (pthread_mutex_unlock(&(lock)) != 0)
-        {
-            perror("pthread_mutex_unlock failed");
-            exit(EXIT_FAILURE);
-        }
+
         if (connfdp == NULL)
         {
             perror("queued item is invalid nah..");
             exit(EXIT_FAILURE);
         }
         connfd = *connfdp;
-        debug("The fd is: %d", connfd);
         /* Response */
         handle_request(connfd);
         /* Free */
         Free(connfdp);
         /* Close */
-        debug("closing this:%d", connfd);
         Close(connfd);
     }
 

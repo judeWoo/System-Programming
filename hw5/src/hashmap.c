@@ -314,6 +314,7 @@ map_val_t get(hashmap_t *self, map_key_t key) {
                 }
                 /* Reading ends */
                 /* Critical section ends */
+                debug("get 2");
                 return self->nodes[index].val;
             }
 
@@ -358,6 +359,7 @@ map_val_t get(hashmap_t *self, map_key_t key) {
                     }
                     /* Reading ends */
                     /* Critical section ends */
+                    debug("get 3");
                     return MAP_VAL(NULL, 0);
                 }
                 if (self->nodes[new_index].key.key_base == NULL) //key not found
@@ -387,6 +389,7 @@ map_val_t get(hashmap_t *self, map_key_t key) {
                     }
                     /* Reading ends */
                     /* Critical section ends */
+                    debug("get 4");
                     return MAP_VAL(NULL, 0);
                 }
                 if (key.key_len == self->nodes[new_index].key.key_len) //if keys have same length
@@ -418,6 +421,7 @@ map_val_t get(hashmap_t *self, map_key_t key) {
                         }
                         /* Reading ends */
                         /* Critical section ends */
+                        debug("get 5");
                         return self->nodes[new_index].val;
                     }
                 }
@@ -425,12 +429,15 @@ map_val_t get(hashmap_t *self, map_key_t key) {
         }
     }
     /* Cannot Come Here */
+    debug("get 6");
     return MAP_VAL(NULL, 0);
 }
 /* This is Writer */
 map_node_t delete(hashmap_t *self, map_key_t key) {
     uint32_t index;
     uint32_t new_index;
+
+    map_node_t deleted_node;
 
     if ((self == NULL) || (key.key_base == NULL) || (key.key_len  <= 0))
     {
@@ -481,6 +488,7 @@ map_node_t delete(hashmap_t *self, map_key_t key) {
                 {
                     goto search;
                 }
+                deleted_node = MAP_NODE(self->nodes[index].key, self->nodes[index].val, true);
                 self->nodes[index].key.key_base = NULL; //delete key
                 self->nodes[index].key.key_len = 0;
                 self->nodes[index].val.val_base = NULL;
@@ -494,7 +502,7 @@ map_node_t delete(hashmap_t *self, map_key_t key) {
                 }
                 /* Writing ends */
                 /* Critical section ends */
-                return self->nodes[index];
+                return deleted_node;
             }
 
             else
@@ -549,6 +557,7 @@ map_node_t delete(hashmap_t *self, map_key_t key) {
                         {
                             continue;
                         }
+                        deleted_node = MAP_NODE(self->nodes[new_index].key, self->nodes[new_index].val, true);
                         self->nodes[new_index].key.key_base = NULL; //delete key
                         self->nodes[new_index].key.key_len = 0;
                         self->nodes[new_index].val.val_base = NULL;
@@ -562,7 +571,7 @@ map_node_t delete(hashmap_t *self, map_key_t key) {
                         }
                         /* Reading ends */
                         /* Critical section ends */
-                        return self->nodes[new_index];
+                        return deleted_node;
                     }
                 }
             }
@@ -595,6 +604,7 @@ bool clear_map(hashmap_t *self) {
 
     if (self->size == 0)
     {
+        debug("size=0");
         return true;
     }
 
