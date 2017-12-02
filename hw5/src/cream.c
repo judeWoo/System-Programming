@@ -189,15 +189,15 @@ int handle_put(int connfd, void *key, void *value)
     {
         response_header = (response_header_t) {BAD_REQUEST, 0};
         Rio_writen(connfd, &response_header, sizeof(response_header));
+        Free(map_key.key_base);
+        Free(map_value.val_base);
         debug("this is put");
-        print_map(hashmap);
         return 0;
     }
 
     response_header = (response_header_t) {OK, strlen(value)};
     Rio_writen(connfd, &response_header, sizeof(response_header));
     debug("this is put");
-    print_map(hashmap);
     return 0;
 }
 int handle_get(int connfd, void *key)
@@ -214,8 +214,9 @@ int handle_get(int connfd, void *key)
     {
         response_header = (response_header_t) {NOT_FOUND, 0};
         Rio_writen(connfd, &response_header, sizeof(response_header));
+        Free(map_key.key_base);
+        Free(map_value.val_base);
         debug("this is get");
-        print_map(hashmap);
         return 0;
     }
 
@@ -223,7 +224,6 @@ int handle_get(int connfd, void *key)
     Rio_writen(connfd, &(response_header), sizeof(response_header));
     Rio_writen(connfd, map_value.val_base, sizeof(map_value.val_base));
     debug("this is get");
-    print_map(hashmap);
     return 0;
 }
 int handle_evict(int connfd, void *key)
@@ -242,7 +242,6 @@ int handle_evict(int connfd, void *key)
     response_header = (response_header_t) {OK, 0};
     Rio_writen(connfd, &(response_header), sizeof(response_header));
     debug("this is evict");
-    print_map(hashmap);
     return 0;
 }
 int handle_clear(int connfd)
@@ -254,14 +253,12 @@ int handle_clear(int connfd)
         response_header = (response_header_t) {BAD_REQUEST, 0};
         Rio_writen(connfd, &response_header, sizeof(response_header));
         debug("this is clear");
-        print_map(hashmap);
         return 0;
     }
 
     response_header = (response_header_t) {OK, 0};
     Rio_writen(connfd, &(response_header), sizeof(response_header));
     debug("this is clear");
-    print_map(hashmap);
     return 0;
 }
 
