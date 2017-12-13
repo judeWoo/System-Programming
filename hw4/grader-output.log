@@ -1,0 +1,121 @@
+time="2017-12-12T22:04:27Z" level=info msg="Running test case." test-case=100_exit
+time="2017-12-12T22:04:27Z" level=info msg="Finished test case." test-case=100_exit
+time="2017-12-12T22:04:27Z" level=info msg="Starting grading case." test-case=100_exit
+time="2017-12-12T22:04:27Z" level=info msg="Finished grading case." earned=2 notes="Full Credit" possible=2 test-case=100_exit
+time="2017-12-12T22:04:27Z" level=info msg="Running test case." test-case=101_help
+time="2017-12-12T22:04:28Z" level=info msg="Finished test case." test-case=101_help
+time="2017-12-12T22:04:28Z" level=info msg="Starting grading case." test-case=101_help
+time="2017-12-12T22:04:28Z" level=info msg="Finished grading case." earned=2 notes="Full Credit" possible=2 test-case=101_help
+time="2017-12-12T22:04:28Z" level=info msg="Running test case." test-case=102_pwd
+time="2017-12-12T22:04:28Z" level=info msg="Finished test case." test-case=102_pwd
+time="2017-12-12T22:04:28Z" level=info msg="Starting grading case." test-case=102_pwd
+time="2017-12-12T22:04:28Z" level=info msg="Finished grading case." earned=3 notes="Full Credit" possible=3 test-case=102_pwd
+time="2017-12-12T22:04:28Z" level=info msg="Running test case." test-case=103_chdir
+time="2017-12-12T22:04:29Z" level=info msg="Finished test case." test-case=103_chdir
+time="2017-12-12T22:04:29Z" level=info msg="Starting grading case." test-case=103_chdir
+time="2017-12-12T22:04:29Z" level=info msg="Finished grading case." earned=3 notes="Full Credit" possible=3 test-case=103_chdir
+time="2017-12-12T22:04:29Z" level=info msg="Running test case." test-case=104_chdir_not_found
+time="2017-12-12T22:04:30Z" level=info msg="Finished test case." test-case=104_chdir_not_found
+time="2017-12-12T22:04:30Z" level=info msg="Starting grading case." test-case=104_chdir_not_found
+time="2017-12-12T22:04:30Z" level=info msg="Finished grading case." earned=3 notes="Full Credit" possible=3 test-case=104_chdir_not_found
+time="2017-12-12T22:04:30Z" level=info msg="Running test case." test-case=200_hello
+time="2017-12-12T22:04:31Z" level=info msg="Finished test case." test-case=200_hello
+time="2017-12-12T22:04:31Z" level=info msg="Starting grading case." test-case=200_hello
+time="2017-12-12T22:04:39Z" level=info msg="Finished grading case." earned=6 notes="Full Credit" possible=6 test-case=200_hello
+time="2017-12-12T22:04:39Z" level=info msg="Running test case." test-case=201_hello_from_path
+time="2017-12-12T22:04:40Z" level=info msg="Finished test case." test-case=201_hello_from_path
+time="2017-12-12T22:04:40Z" level=info msg="Starting grading case." test-case=201_hello_from_path
+time="2017-12-12T22:04:40Z" level=info msg="Finished grading case." earned=6 notes="Full Credit" possible=6 test-case=201_hello_from_path
+time="2017-12-12T22:04:40Z" level=info msg="Running test case." test-case=202_echo
+time="2017-12-12T22:04:40Z" level=info msg="Finished test case." test-case=202_echo
+time="2017-12-12T22:04:40Z" level=info msg="Starting grading case." test-case=202_echo
+time="2017-12-12T22:04:40Z" level=info msg="Finished grading case." earned=6 notes="Full Credit" possible=6 test-case=202_echo
+time="2017-12-12T22:04:40Z" level=info msg="Running test case." test-case=203_cat
+time="2017-12-12T22:04:41Z" level=info msg="Finished test case." test-case=203_cat
+time="2017-12-12T22:04:41Z" level=info msg="Starting grading case." test-case=203_cat
+time="2017-12-12T22:04:41Z" level=info msg="Finished grading case." earned=6 notes="Full Credit" possible=6 test-case=203_cat
+time="2017-12-12T22:04:41Z" level=info msg="Running test case." test-case=204_exec_not_found
+time="2017-12-12T22:04:42Z" level=info msg="Finished test case." test-case=204_exec_not_found
+time="2017-12-12T22:04:42Z" level=info msg="Starting grading case." test-case=204_exec_not_found
+time="2017-12-12T22:04:42Z" level=info msg="Finished grading case." earned=6 notes="Full Credit" possible=6 test-case=204_exec_not_found
+time="2017-12-12T22:04:42Z" level=info msg="Running test case." test-case=300_output_redirection
+time="2017-12-12T22:04:42Z" level=info msg="Finished test case." test-case=300_output_redirection
+time="2017-12-12T22:04:42Z" level=info msg="Starting grading case." test-case=300_output_redirection
+time="2017-12-12T22:04:42Z" level=info msg="Finished grading case." earned=3 notes="Full Credit" possible=3 test-case=300_output_redirection
+time="2017-12-12T22:04:42Z" level=info msg="Running test case." test-case=301_input_redirection
+time="2017-12-12T22:04:43Z" level=info msg="Finished test case." test-case=301_input_redirection
+time="2017-12-12T22:04:43Z" level=info msg="Starting grading case." test-case=301_input_redirection
+time="2017-12-12T22:04:43Z" level=info msg="Finished grading case." earned=3 notes="Full Credit" possible=3 test-case=301_input_redirection
+time="2017-12-12T22:04:43Z" level=info msg="Running test case." test-case=302_input_output_redirection
+time="2017-12-12T22:04:44Z" level=info msg="Finished test case." test-case=302_input_output_redirection
+time="2017-12-12T22:04:44Z" level=info msg="Starting grading case." test-case=302_input_output_redirection
+time="2017-12-12T22:04:44Z" level=info msg="Finished grading case." earned=3 notes="Full Credit" possible=3 test-case=302_input_output_redirection
+time="2017-12-12T22:04:44Z" level=info msg="Running test case." test-case=303_double_output_redirection
+time="2017-12-12T22:04:44Z" level=info msg="Finished test case." test-case=303_double_output_redirection
+time="2017-12-12T22:04:44Z" level=info msg="Starting grading case." test-case=303_double_output_redirection
+time="2017-12-12T22:04:44Z" level=info msg="Finished grading case." earned=1 notes="Full Credit" possible=1 test-case=303_double_output_redirection
+time="2017-12-12T22:04:44Z" level=info msg="Running test case." test-case=304_double_input_redirection
+time="2017-12-12T22:04:45Z" level=info msg="Finished test case." test-case=304_double_input_redirection
+time="2017-12-12T22:04:45Z" level=info msg="Starting grading case." test-case=304_double_input_redirection
+time="2017-12-12T22:04:45Z" level=info msg="Finished grading case." earned=1 notes="Full Credit" possible=1 test-case=304_double_input_redirection
+time="2017-12-12T22:04:45Z" level=info msg="Running test case." test-case=305_help_redirection
+time="2017-12-12T22:04:45Z" level=info msg="Finished test case." test-case=305_help_redirection
+time="2017-12-12T22:04:45Z" level=info msg="Starting grading case." test-case=305_help_redirection
+time="2017-12-12T22:04:45Z" level=info msg="Finished grading case." earned=2 notes="Full Credit" possible=2 test-case=305_help_redirection
+time="2017-12-12T22:04:45Z" level=info msg="Running test case." test-case=306_pwd_redirection
+time="2017-12-12T22:04:46Z" level=info msg="Finished test case." test-case=306_pwd_redirection
+time="2017-12-12T22:04:46Z" level=info msg="Starting grading case." test-case=306_pwd_redirection
+time="2017-12-12T22:04:46Z" level=info msg="Finished grading case." earned=2 notes="Full Credit" possible=2 test-case=306_pwd_redirection
+time="2017-12-12T22:04:46Z" level=info msg="Running test case." test-case=307_single_pipe
+time="2017-12-12T22:04:46Z" level=info msg="Finished test case." test-case=307_single_pipe
+time="2017-12-12T22:04:46Z" level=info msg="Starting grading case." test-case=307_single_pipe
+time="2017-12-12T22:04:46Z" level=info msg="Finished grading case." earned=2 notes="Full Credit" possible=2 test-case=307_single_pipe
+time="2017-12-12T22:04:46Z" level=info msg="Running test case." test-case=308_multiple_pipes
+time="2017-12-12T22:04:47Z" level=info msg="Finished test case." test-case=308_multiple_pipes
+time="2017-12-12T22:04:47Z" level=info msg="Starting grading case." test-case=308_multiple_pipes
+time="2017-12-12T22:04:47Z" level=info msg="Finished grading case." earned=2 notes="Full Credit" possible=2 test-case=308_multiple_pipes
+time="2017-12-12T22:04:47Z" level=info msg="Running test case." test-case=309_bad_syntax_1
+time="2017-12-12T22:04:47Z" level=info msg="Finished test case." test-case=309_bad_syntax_1
+time="2017-12-12T22:04:47Z" level=info msg="Starting grading case." test-case=309_bad_syntax_1
+time="2017-12-12T22:04:47Z" level=info msg="Finished grading case." earned=1 notes="Full Credit" possible=1 test-case=309_bad_syntax_1
+time="2017-12-12T22:04:47Z" level=info msg="Running test case." test-case=310_bad_syntax_2
+time="2017-12-12T22:04:48Z" level=info msg="Finished test case." test-case=310_bad_syntax_2
+time="2017-12-12T22:04:48Z" level=info msg="Starting grading case." test-case=310_bad_syntax_2
+time="2017-12-12T22:04:48Z" level=info msg="Finished grading case." earned=1 notes="Full Credit" possible=1 test-case=310_bad_syntax_2
+time="2017-12-12T22:04:48Z" level=info msg="Running test case." test-case=311_bad_syntax_3
+time="2017-12-12T22:04:48Z" level=info msg="Finished test case." test-case=311_bad_syntax_3
+time="2017-12-12T22:04:48Z" level=info msg="Starting grading case." test-case=311_bad_syntax_3
+time="2017-12-12T22:04:48Z" level=info msg="Finished grading case." earned=1 notes="Full Credit" possible=1 test-case=311_bad_syntax_3
+time="2017-12-12T22:04:48Z" level=info msg="Running test case." test-case=312_bad_syntax_4
+time="2017-12-12T22:04:48Z" level=info msg="Finished test case." test-case=312_bad_syntax_4
+time="2017-12-12T22:04:48Z" level=info msg="Starting grading case." test-case=312_bad_syntax_4
+time="2017-12-12T22:04:48Z" level=info msg="Finished grading case." earned=1 notes="Full Credit" possible=1 test-case=312_bad_syntax_4
+time="2017-12-12T22:04:48Z" level=info msg="Running test case." test-case=313_bad_syntax_5
+time="2017-12-12T22:04:49Z" level=info msg="Finished test case." test-case=313_bad_syntax_5
+time="2017-12-12T22:04:49Z" level=info msg="Starting grading case." test-case=313_bad_syntax_5
+time="2017-12-12T22:04:49Z" level=info msg="Finished grading case." earned=1 notes="Full Credit" possible=1 test-case=313_bad_syntax_5
+time="2017-12-12T22:04:49Z" level=info msg="Running test case." test-case=314_bad_syntax_6
+time="2017-12-12T22:04:49Z" level=info msg="Finished test case." test-case=314_bad_syntax_6
+time="2017-12-12T22:04:49Z" level=info msg="Starting grading case." test-case=314_bad_syntax_6
+time="2017-12-12T22:04:49Z" level=info msg="Finished grading case." earned=1 notes="Full Credit" possible=1 test-case=314_bad_syntax_6
+time="2017-12-12T22:04:49Z" level=info msg="Running test case." test-case=315_bad_syntax_7
+time="2017-12-12T22:04:49Z" level=info msg="Finished test case." test-case=315_bad_syntax_7
+time="2017-12-12T22:04:49Z" level=info msg="Starting grading case." test-case=315_bad_syntax_7
+time="2017-12-12T22:04:49Z" level=info msg="Finished grading case." earned=1 notes="Full Credit" possible=1 test-case=315_bad_syntax_7
+time="2017-12-12T22:04:49Z" level=info msg="Running test case." test-case=316_piped_exec_error_1
+time="2017-12-12T22:04:50Z" level=info msg="Finished test case." test-case=316_piped_exec_error_1
+time="2017-12-12T22:04:50Z" level=info msg="Starting grading case." test-case=316_piped_exec_error_1
+time="2017-12-12T22:04:50Z" level=info msg="Finished grading case." earned=1 notes="Full Credit" possible=1 test-case=316_piped_exec_error_1
+time="2017-12-12T22:04:50Z" level=info msg="Running test case." test-case=317_piped_exec_error_2
+time="2017-12-12T22:04:50Z" level=info msg="Finished test case." test-case=317_piped_exec_error_2
+time="2017-12-12T22:04:50Z" level=info msg="Starting grading case." test-case=317_piped_exec_error_2
+time="2017-12-12T22:04:50Z" level=info msg="Finished grading case." earned=1 notes="Full Credit" possible=1 test-case=317_piped_exec_error_2
+time="2017-12-12T22:04:50Z" level=info msg="Running test case." test-case=600_more_redirection_options
+time="2017-12-12T22:04:51Z" level=info msg="Finished test case." test-case=600_more_redirection_options
+time="2017-12-12T22:04:51Z" level=info msg="Starting grading case." test-case=600_more_redirection_options
+time="2017-12-12T22:04:51Z" level=info msg="Finished grading case." earned=5 notes="Full Credit" possible=5 test-case=600_more_redirection_options
+time="2017-12-12T22:04:51Z" level=info msg="Running test case." test-case=601_command_substitution
+time="2017-12-12T22:04:52Z" level=info msg="Finished test case." test-case=601_command_substitution
+time="2017-12-12T22:04:52Z" level=info msg="Starting grading case." test-case=601_command_substitution
+time="2017-12-12T22:04:52Z" level=info msg="Finished grading case." earned=0 notes="No Credit; Output doesnt match: expected regex = helloworldhelloipsumdolorsitamet, got = `echohelloworld`" possible=5 test-case=601_command_substitution
+time="2017-12-12T22:04:52Z" level=info msg="--- GRADING COMPLETE ---"
